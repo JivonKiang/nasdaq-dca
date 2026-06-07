@@ -714,8 +714,17 @@ function generateDataPersuasion(data) {
     maxDrawdownPct = '25%';
   }
 
-  const maxLoss = Math.round(userSettings.totalInvested * parseFloat(maxDrawdownPct) / 100);
-  const lossRatio = ((maxLoss / totalAssets) * 100).toFixed(2);
+  // 如果用户没有设置投入数据，用定投记录自动计算
+  const totalInvested = userSettings.totalInvested > 0
+    ? userSettings.totalInvested
+    : getHistoryTotalInvested();
+
+  const maxLoss = totalInvested > 0
+    ? Math.round(totalInvested * parseFloat(maxDrawdownPct) / 100)
+    : 0;
+  const lossRatio = maxLoss > 0
+    ? ((maxLoss / totalAssets) * 100).toFixed(2)
+    : '0.00';
 
   return {
     weeklyRatio,
@@ -724,7 +733,14 @@ function generateDataPersuasion(data) {
     maxLoss,
     lossRatio,
     startPE: pe.toFixed(1),
+    totalInvested,
   };
+}
+
+// 从定投记录计算累计投入
+function getHistoryTotalInvested() {
+  const history = getHistory();
+  return history.reduce((sum, h) => sum + h.amount, 0);
 }
 
 // ===== UI渲染层 =====
@@ -919,10 +935,10 @@ function renderTodayTab(data) {
     <div class="card quote-card">
       <div class="card-title" style="justify-content:center"><span class="emoji">📊</span>数据说服</div>
       <div class="quote-text">
-        你当前累计投入约${userSettings.totalInvested > 0 ? (userSettings.totalInvested / 10000).toFixed(1) + '万' : '请设置'}元，
+        你当前累计投入约${persuasion.totalInvested > 0 ? (persuasion.totalInvested / 10000).toFixed(1) + '万' : '0'}元，
         ${userSettings.avgCost > 0 ? '持仓成本约' + userSettings.avgCost.toFixed(4) + '。' : ''}
         历史上PE从${persuasion.startPE}倍开始定投，持有12个月正收益概率约${persuasion.prob12m}。
-        最可能情景下最大浮亏约${persuasion.maxLoss > 0 ? (persuasion.maxLoss / 10000).toFixed(1) + '万' : '--'}元（占总资产${persuasion.lossRatio}%）。
+        最可能情景下最大浮亏约${persuasion.maxLoss > 0 ? (persuasion.maxLoss / 10000).toFixed(1) + '万' : '0'}元（占总资产${persuasion.lossRatio}%）。
       </div>
       <div class="quote-text" style="font-size:14px;margin-top:8px;">
         市场恐惧时坚持买入，是定投策略超额收益的来源。<br>
@@ -1515,6 +1531,176 @@ function clearHistory() {
     localStorage.removeItem('nasdaq_dca_history');
     renderHistoryTab();
   }
+}
+
+// ===== 支付宝截图识别 =====
+
+function handleAlipayScreenshot(input) {
+  const file = input.files[0];
+  if (!file) return;
+
+  const ocrResult = document.getElementById('ocrResult');
+  ocrResult.style.display = 'block';
+  ocrResult.innerHTML = '🔍 正在识别截图...';
+
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const img = new Image();
+    img.onload = function() {
+      // 使用Tesseract.js进行OCR识别
+      recognizeAlipayScreenshot(img, ocrResult);
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+async function recognizeAlipayScreenshot(img, resultDiv) {
+  try {
+    // 动态加载Tesseract.js
+    if (!window.Tesseract) {
+      resultDiv.innerHTML = '📥 正在加载OCR引擎...';
+      await loadScript('https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js');
+    }
+
+    resultDiv.innerHTML = '🔍 正在识别文字...';
+
+    const { data: { text } } = await Tesseract.recognize(img, 'chi_sim+eng', {
+      logger: m => {
+        if (m.status === 'recognizing text') {
+          resultDiv.innerHTML = `🔍 识别中... ${Math.round(m.progress * 100)}%`;
+        }
+      }
+    });
+
+    // 解析关键数据
+    const extracted = parseAlipayOCR(text);
+
+    if (extracted.found) {
+      // 自动填入设置
+      if (extracted.totalInvested) {
+        document.getElementById('setTotalInvested').value = extracted.totalInvested;
+        userSettings.totalInvested = extracted.totalInvested;
+      }
+      if (extracted.avgCost) {
+        document.getElementById('setAvgCost').value = extracted.avgCost;
+        userSettings.avgCost = extracted.avgCost;
+      }
+      if (extracted.currentValue) {
+        document.getElementById('setCurrentValue').value = extracted.currentValue;
+        userSettings.currentValue = extracted.currentValue;
+      }
+      saveSettings();
+
+      resultDiv.innerHTML = `
+        <div style="color:var(--accent-green);font-weight:700;">✅ 识别成功！已自动填入</div>
+        <div style="margin-top:6px;line-height:1.6;">
+          ${extracted.totalInvested ? `累计投入: ${(extracted.totalInvested/10000).toFixed(2)}万<br>` : ''}
+          ${extracted.avgCost ? `持仓成本: ${extracted.avgCost.toFixed(4)}<br>` : ''}
+          ${extracted.currentValue ? `当前市值: ${(extracted.currentValue/10000).toFixed(2)}万<br>` : ''}
+          ${extracted.profit ? `盈亏: ${extracted.profit >= 0 ? '+' : ''}${extracted.profit.toFixed(2)}%` : ''}
+        </div>
+      `;
+    } else {
+      resultDiv.innerHTML = `
+        <div style="color:var(--accent-yellow);">⚠️ 未能识别关键数据</div>
+        <div style="margin-top:4px;font-size:11px;color:var(--text-muted);">
+          识别到的文字:<br>${text.substring(0, 200)}...
+        </div>
+        <div style="margin-top:6px;">
+          请确保截图包含：累计投入、持仓成本、当前市值等数据
+        </div>
+      `;
+    }
+  } catch (err) {
+    resultDiv.innerHTML = `<div style="color:var(--accent-red);">❌ 识别失败: ${err.message}</div>`;
+  }
+}
+
+// 解析支付宝OCR文本
+function parseAlipayOCR(text) {
+  const result = { found: false };
+
+  // 累计投入/累计金额
+  const totalPatterns = [
+    /累计投入[：:]?\s*([\d,\.]+)/,
+    /累计金额[：:]?\s*([\d,\.]+)/,
+    /投入金额[：:]?\s*([\d,\.]+)/,
+    /持仓成本[：:]?\s*([\d,\.]+)/,
+    /成本[：:]?\s*([\d,\.]+)/,
+  ];
+
+  for (const pattern of totalPatterns) {
+    const match = text.match(pattern);
+    if (match) {
+      const val = parseFloat(match[1].replace(/,/g, ''));
+      if (val > 1000) {
+        result.totalInvested = val;
+        result.found = true;
+        break;
+      }
+    }
+  }
+
+  // 持仓成本（每份）
+  const costPatterns = [
+    /持仓成本[：:]?\s*([\d,\.]+)/,
+    /成本价[：:]?\s*([\d,\.]+)/,
+    /单价[：:]?\s*([\d,\.]+)/,
+    /净值[：:]?\s*([\d,\.]+)/,
+  ];
+
+  for (const pattern of costPatterns) {
+    const match = text.match(pattern);
+    if (match) {
+      const val = parseFloat(match[1].replace(/,/g, ''));
+      if (val > 0.1 && val < 100) {
+        result.avgCost = val;
+        result.found = true;
+        break;
+      }
+    }
+  }
+
+  // 当前市值/最新市值
+  const valuePatterns = [
+    /当前市值[：:]?\s*([\d,\.]+)/,
+    /最新市值[：:]?\s*([\d,\.]+)/,
+    /市值[：:]?\s*([\d,\.]+)/,
+    /金额[：:]?\s*([\d,\.]+)/,
+    /资产[：:]?\s*([\d,\.]+)/,
+  ];
+
+  for (const pattern of valuePatterns) {
+    const match = text.match(pattern);
+    if (match) {
+      const val = parseFloat(match[1].replace(/,/g, ''));
+      if (val > 1000) {
+        result.currentValue = val;
+        result.found = true;
+        break;
+      }
+    }
+  }
+
+  // 盈亏百分比
+  const profitMatch = text.match(/([+-]?[\d\.]+)%/);
+  if (profitMatch) {
+    result.profit = parseFloat(profitMatch[1]);
+  }
+
+  return result;
+}
+
+// 动态加载外部脚本
+function loadScript(src) {
+  return new Promise((resolve, reject) => {
+    const script = document.createElement('script');
+    script.src = src;
+    script.onload = resolve;
+    script.onerror = reject;
+    document.head.appendChild(script);
+  });
 }
 
 // ===== 数据缓存 =====
