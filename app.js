@@ -41,6 +41,12 @@ let consecutiveAddDays = 0; // 连续加仓天数
 document.addEventListener('DOMContentLoaded', async () => {
   loadSettings();
 
+  // 首次使用：检查是否需要显示引导
+  if (!userSettings.onboarded) {
+    showOnboarding();
+    return; // 等用户完成引导后再加载数据
+  }
+
   // 速度优化：优先读GitHub缓存（秒开），再后台拉新数据
   try {
     const githubCache = await fetchGitHubCache();
@@ -744,7 +750,13 @@ function getHistoryTotalInvested() {
 function renderTodayTab(data) {
   const tab = document.getElementById('tab-today');
   const pe = data.pe;
-  const grade = data.peGrade;
+
+  // 兼容旧缓存数据：如果peGrade只有amount没有shares，重新计算
+  let grade = data.peGrade;
+  if (grade && !grade.shares && grade.amount) {
+    grade = getPEGrade(pe);
+  }
+
   const addResult = calculateAdditionalBuy(data);
   const trend = analyzeTrend(data);
   const persuasion = generateDataPersuasion(data);
@@ -1468,6 +1480,93 @@ function closeSettings(e) {
   if (!e || e.target === document.getElementById('settingsOverlay')) {
     document.getElementById('settingsOverlay').classList.remove('show');
   }
+}
+
+// ===== 首次使用引导 =====
+
+function showOnboarding() {
+  const overlay = document.getElementById('onboardingOverlay');
+  overlay.style.display = 'flex';
+  // 设置默认日期为今天
+  document.getElementById('onboardStartDate').value = new Date().toISOString().split('T')[0];
+}
+
+function saveOnboarding() {
+  const startDate = document.getElementById('onboardStartDate').value;
+  const frequency = document.getElementById('onboardFrequency').value;
+  const method = document.getElementById('onboardMethod').value;
+  const baseShares = parseFloat(document.getElementById('onboardBaseShares').value) || 1;
+  const assetRatio = parseFloat(document.getElementById('onboardAssetRatio').value) || 1.0;
+
+  if (!startDate) {
+    alert('请选择开始定投日期');
+    return;
+  }
+
+  userSettings = {
+    startDate: startDate,
+    frequency: frequency,
+    method: method,
+    baseShares: baseShares,
+    totalAssets: assetRatio,
+    weeklyBase: 1000,
+    holdings: 16,
+    onboarded: true,
+  };
+
+  localStorage.setItem('nasdaq_dca_settings', JSON.stringify(userSettings));
+
+  // 隐藏引导，开始加载数据
+  document.getElementById('onboardingOverlay').style.display = 'none';
+
+  // 初始化数据加载
+  initApp();
+}
+
+// 初始化应用（引导完成后调用）
+async function initApp() {
+  // 速度优化：优先读GitHub缓存（秒开），再后台拉新数据
+  try {
+    const githubCache = await fetchGitHubCache();
+    if (githubCache) {
+      githubCache._source = 'github-cache';
+      marketData = githubCache;
+      renderAllTabs(githubCache);
+      updateHeaderStatus(githubCache);
+      document.getElementById('loadingState').style.display = 'none';
+      fetchAllMarketData().then(fresh => {
+        if (fresh && !fresh._mock && !fresh._stale) {
+          marketData = fresh;
+          renderAllTabs(fresh);
+          updateHeaderStatus(fresh);
+        }
+      }).catch(() => {});
+      return;
+    }
+  } catch (e) {
+    console.warn('GitHub cache fetch failed:', e);
+  }
+
+  // 无GitHub缓存，尝试localStorage缓存
+  const localCached = loadCachedData();
+  if (localCached) {
+    localCached._source = 'local-cache';
+    marketData = localCached;
+    renderAllTabs(localCached);
+    updateHeaderStatus(localCached);
+    document.getElementById('loadingState').style.display = 'none';
+    fetchAllMarketData().then(fresh => {
+      if (fresh && !fresh._mock) {
+        marketData = fresh;
+        renderAllTabs(fresh);
+        updateHeaderStatus(fresh);
+      }
+    }).catch(() => {});
+    return;
+  }
+
+  // 完全无缓存，走完整加载
+  refreshData();
 }
 
 // ===== 定投记录 =====

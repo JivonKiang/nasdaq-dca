@@ -140,9 +140,10 @@
   "pe": 33,
   "peGrade": {
     "name": "半额",
-    "amount": 500,
+    "shares": 0.5,
     "color": "yellow",
-    "cls": "buy-half"
+    "cls": "buy-half",
+    "level": "半额"
   },
   "vix": 16.5,
   "vixRecent": [
@@ -222,5 +223,5 @@
     33.13352132271609
   ],
   "dataSource": "initial-seed",
-  "updatedAt": "2026-06-07T11:08:55.552Z"
+  "updatedAt": "2026-06-07T12:04:54.568Z"
 }
