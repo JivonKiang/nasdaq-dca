@@ -23,29 +23,223 @@ const CONFIG = {
   GITHUB_CACHE_URL: './cache.json',
 };
 
-// ===== 用户设置（预填默认值）=====
+// ===== 用户设置（从当前角色生成）=====
 let userSettings = {
-  startDate: '',          // 开始定投日期，首次记账时自动记录
-  totalAssets: 1.0,       // 定投占比系数（1.0=基准）
-  weeklyBase: 1000,       // 周四定投基准1000元（内部计算用，不显示）
-  holdings: 16,           // 15支纳指100 + 1支标普500 = 16支
+  startDate: '',
+  totalAssets: 1.0,
+  weeklyBase: 1000,
+  holdings: 16,
 };
+
+// ===== 角色系统 =====
+const DEFAULT_PROFILE = {
+  id: 'default',
+  name: '默认账户',
+  startDate: '2026-06-01',
+  frequency: 'weekly',
+  method: 'pe-based',
+  baseShares: 1,
+  assetRatio: 1.0,
+  holdings: 16,
+  isDefault: true,
+};
+
+// 默认角色的初始记录
+const DEFAULT_HISTORY_RECORD = {
+  date: '2026-06-05',
+  type: '周四定投',
+  amount: 1000,
+  shares: 1,
+  pe: 33,
+  ndx: 21000,
+  profileId: 'default',
+};
+
+let profiles = [];
+let currentProfileId = 'default';
+
+function loadProfiles() {
+  try {
+    const saved = localStorage.getItem('nasdaq_dca_profiles');
+    if (saved) {
+      profiles = JSON.parse(saved);
+    }
+  } catch (e) {
+    console.warn('Profiles load failed:', e);
+  }
+
+  // 确保默认角色始终存在
+  const hasDefault = profiles.find(p => p.id === 'default');
+  if (!hasDefault) {
+    profiles.unshift({ ...DEFAULT_PROFILE });
+  }
+
+  // 加载当前选中的角色ID
+  try {
+    const savedId = localStorage.getItem('nasdaq_dca_current_profile');
+    if (savedId && profiles.find(p => p.id === savedId)) {
+      currentProfileId = savedId;
+    }
+  } catch (e) {
+    currentProfileId = 'default';
+  }
+
+  // 确保默认角色的初始记录存在
+  ensureDefaultHistoryRecord();
+
+  // 从当前角色生成 userSettings
+  syncUserSettingsFromProfile();
+}
+
+function saveProfiles() {
+  localStorage.setItem('nasdaq_dca_profiles', JSON.stringify(profiles));
+  localStorage.setItem('nasdaq_dca_current_profile', currentProfileId);
+}
+
+function ensureDefaultHistoryRecord() {
+  let allHistory = [];
+  try {
+    const saved = localStorage.getItem('nasdaq_dca_history');
+    allHistory = saved ? JSON.parse(saved) : [];
+  } catch (e) {
+    allHistory = [];
+  }
+  const exists = allHistory.find(h => h.date === '2026-06-05' && h.profileId === 'default');
+  if (!exists) {
+    allHistory.push({ ...DEFAULT_HISTORY_RECORD });
+    localStorage.setItem('nasdaq_dca_history', JSON.stringify(allHistory));
+  }
+}
+
+function getCurrentProfile() {
+  return profiles.find(p => p.id === currentProfileId) || profiles[0] || { ...DEFAULT_PROFILE };
+}
+
+function syncUserSettingsFromProfile() {
+  const profile = getCurrentProfile();
+  userSettings = {
+    startDate: profile.startDate,
+    totalAssets: profile.assetRatio,
+    weeklyBase: 1000,
+    holdings: profile.holdings || 16,
+    frequency: profile.frequency,
+    method: profile.method || 'pe-based',
+    baseShares: profile.baseShares || 1,
+  };
+}
+
+function addProfile() {
+  const newId = 'profile_' + Date.now();
+  const newProfile = {
+    id: newId,
+    name: '新角色 ' + (profiles.length),
+    startDate: new Date().toISOString().split('T')[0],
+    frequency: 'weekly',
+    method: 'pe-based',
+    baseShares: 1,
+    assetRatio: 1.0,
+    holdings: 16,
+    isDefault: false,
+  };
+  profiles.push(newProfile);
+  saveProfiles();
+  currentProfileId = newId;
+  saveProfiles();
+  syncUserSettingsFromProfile();
+  renderProfileUI();
+}
+
+function deleteCurrentProfile() {
+  const profile = getCurrentProfile();
+  if (profile.isDefault) {
+    alert('默认角色不可删除');
+    return;
+  }
+  if (!confirm(`确定要删除角色"${profile.name}"吗？相关定投记录将保留。`)) return;
+
+  profiles = profiles.filter(p => p.id !== currentProfileId);
+  currentProfileId = 'default';
+  saveProfiles();
+  syncUserSettingsFromProfile();
+  renderProfileUI();
+
+  // 重新渲染
+  if (marketData) {
+    renderAllTabs(marketData);
+  }
+}
+
+function switchProfile(profileId) {
+  currentProfileId = profileId;
+  saveProfiles();
+  syncUserSettingsFromProfile();
+  renderProfileUI();
+
+  // 重新渲染
+  if (marketData) {
+    renderAllTabs(marketData);
+  }
+}
+
+function saveCurrentProfile() {
+  const profile = getCurrentProfile();
+  profile.name = document.getElementById('profileName').value || profile.name;
+  profile.startDate = document.getElementById('profileStartDate').value || profile.startDate;
+  profile.frequency = document.getElementById('profileFrequency').value;
+  profile.baseShares = parseFloat(document.getElementById('profileBaseShares').value) || 1;
+  profile.assetRatio = parseFloat(document.getElementById('profileAssetRatio').value) || 1.0;
+
+  saveProfiles();
+  syncUserSettingsFromProfile();
+
+  // 更新下拉框显示
+  const select = document.getElementById('profileSelect');
+  const option = select.querySelector(`option[value="${profile.id}"]`);
+  if (option) option.textContent = profile.name;
+
+  // 重新渲染
+  if (marketData) {
+    renderAllTabs(marketData);
+  }
+
+  alert('角色已保存');
+}
+
+function renderProfileUI() {
+  const select = document.getElementById('profileSelect');
+  select.innerHTML = profiles.map(p =>
+    `<option value="${p.id}" ${p.id === currentProfileId ? 'selected' : ''}>${p.name}${p.isDefault ? ' (默认)' : ''}</option>`
+  ).join('');
+
+  const profile = getCurrentProfile();
+  document.getElementById('profileName').value = profile.name;
+  document.getElementById('profileStartDate').value = profile.startDate;
+  document.getElementById('profileFrequency').value = profile.frequency;
+  document.getElementById('profileBaseShares').value = profile.baseShares;
+  document.getElementById('profileAssetRatio').value = profile.assetRatio;
+
+  // 更新Header角色名称
+  const headerProfile = document.getElementById('headerProfile');
+  if (headerProfile) {
+    headerProfile.textContent = '👤 ' + profile.name;
+  }
+
+  // 默认角色不可删除
+  const deleteBtn = document.getElementById('deleteProfileBtn');
+  deleteBtn.style.display = profile.isDefault ? 'none' : 'block';
+}
 
 // ===== 全局状态 =====
 let marketData = null;
 let lastFetchTime = 0;
 let currentProxyIndex = 0;
-let consecutiveAddDays = 0; // 连续加仓天数
+let consecutiveAddDays = 0;
 
 // ===== 初始化 =====
 document.addEventListener('DOMContentLoaded', async () => {
+  loadProfiles();
   loadSettings();
-
-  // 首次使用：检查是否需要显示引导
-  if (!userSettings.onboarded) {
-    showOnboarding();
-    return; // 等用户完成引导后再加载数据
-  }
+  renderProfileUI();
 
   // 速度优化：优先读GitHub缓存（秒开），再后台拉新数据
   try {
@@ -412,12 +606,62 @@ function estimatePE(price) {
 
 // 生成模拟历史PE数据（用于长期趋势展示）
 function generateHistoricalPE(currentPE, closes) {
-  // 基于价格反推历史PE的近似值
+  // 基于价格反推历史PE的近似值（确定性算法，无随机数）
   const currentPrice = closes[closes.length - 1] || 20000;
   return closes.slice(-60).map((c, i) => {
     const priceRatio = c / currentPrice;
-    return Math.max(15, Math.min(50, currentPE * priceRatio * (0.9 + Math.random() * 0.2)));
+    // 用确定性正弦波模拟PE围绕价格比率的波动，替代原来的 Math.random()
+    const deterministicFactor = 0.95 + 0.1 * Math.sin(i * 0.7);
+    return Math.max(15, Math.min(50, currentPE * priceRatio * deterministicFactor));
   });
+}
+
+// 生成迷你走势图SVG（近20日收盘价）
+function generateMiniChart(recentCloses) {
+  const prices = recentCloses.filter(c => c !== null).slice(-20);
+  if (prices.length < 2) return '';
+
+  const width = 300;
+  const height = 60;
+  const padding = 4;
+
+  const min = Math.min(...prices);
+  const max = Math.max(...prices);
+  const range = max - min || 1;
+
+  // 将价格映射到SVG坐标
+  const points = prices.map((p, i) => {
+    const x = padding + (i / (prices.length - 1)) * (width - 2 * padding);
+    const y = height - padding - ((p - min) / range) * (height - 2 * padding);
+    return `${x.toFixed(1)},${y.toFixed(1)}`;
+  });
+
+  const polylinePoints = points.join(' ');
+
+  // 判断趋势：最后价格 vs 第一价格
+  const isUp = prices[prices.length - 1] >= prices[0];
+  const lineColor = isUp ? 'var(--accent-green)' : 'var(--accent-red)';
+  const dotColor = isUp ? '#22c55e' : '#ef4444';
+
+  // 最后一个点的坐标
+  const lastPoint = points[points.length - 1];
+
+  return `
+    <div style="margin-top:12px;">
+      <div style="font-size:11px;color:var(--text-muted);margin-bottom:4px;">近20日收盘价走势</div>
+      <svg width="100%" height="${height}" viewBox="0 0 ${width} ${height}" preserveAspectRatio="none" style="display:block;">
+        <polyline
+          points="${polylinePoints}"
+          fill="none"
+          stroke="${lineColor}"
+          stroke-width="1.5"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        />
+        <circle cx="${lastPoint.split(',')[0]}" cy="${lastPoint.split(',')[1]}" r="3" fill="${dotColor}" />
+      </svg>
+    </div>
+  `;
 }
 
 // ===== PE档位判定 =====
@@ -824,6 +1068,39 @@ function renderTodayTab(data) {
     ${extremeWarning}
     ${consecutiveAlert}
 
+    <!-- 操作指令 -->
+    <div class="card action-card ${grade.class}">
+      <div class="card-title"><span class="emoji">⚡</span>操作指令</div>
+
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+        <span style="font-size:13px;">✅ 周四定投</span>
+        <span class="${grade.color}" style="font-weight:700;font-size:15px;">${grade.shares}份</span>
+      </div>
+      <div style="font-size:12px;color:var(--text-muted);margin-bottom:12px;">
+        PE=${pe.toFixed(1)} → ${grade.level}档
+      </div>
+
+      <div style="border-top:1px solid var(--border);padding-top:10px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+          <span style="font-size:13px;">✅ 额外加仓</span>
+          <span style="font-weight:700;font-size:15px;" class="${addResult.shouldAdd ? 'green' : 'muted'}">
+            ${addResult.shouldAdd ? `加仓${addResult.shares}份` : '不加仓'}
+          </span>
+        </div>
+        ${addResult.reason ? `<div class="action-reason">${addResult.reason}</div>` : ''}
+        ${eventDowngrade ? `<div style="font-size:11px;color:var(--accent-yellow);margin-top:4px;">⚠️ 事件降档已触发</div>` : ''}
+      </div>
+
+      <div style="border-top:1px solid var(--border);padding-top:10px;margin-top:10px;">
+        <div style="display:flex;justify-content:space-between;font-size:13px;">
+          <span>📊 今日操作：基准1份</span>
+          <span class="${grade.color}" style="font-weight:800;font-size:18px;">
+            ${grade.shares + (addResult.shouldAdd ? addResult.shares : 0)}份
+          </span>
+        </div>
+      </div>
+    </div>
+
     <!-- 心理锚点 -->
     <div class="card">
       <div class="card-title"><span class="emoji">🧠</span>心理锚点</div>
@@ -881,39 +1158,9 @@ function renderTodayTab(data) {
       <div class="pe-gauge-labels">
         <span>15</span><span>25</span><span>28</span><span>32</span><span>35</span><span>40</span><span>50</span>
       </div>
-    </div>
 
-    <!-- 操作指令 -->
-    <div class="card action-card ${grade.class}">
-      <div class="card-title"><span class="emoji">⚡</span>操作指令</div>
-
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-        <span style="font-size:13px;">✅ 周四定投</span>
-        <span class="${grade.color}" style="font-weight:700;font-size:15px;">${grade.shares}份</span>
-      </div>
-      <div style="font-size:12px;color:var(--text-muted);margin-bottom:12px;">
-        PE=${pe.toFixed(1)} → ${grade.level}档
-      </div>
-
-      <div style="border-top:1px solid var(--border);padding-top:10px;">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-          <span style="font-size:13px;">✅ 额外加仓</span>
-          <span style="font-weight:700;font-size:15px;" class="${addResult.shouldAdd ? 'green' : 'muted'}">
-            ${addResult.shouldAdd ? `加仓${addResult.shares}份` : '不加仓'}
-          </span>
-        </div>
-        ${addResult.reason ? `<div class="action-reason">${addResult.reason}</div>` : ''}
-        ${eventDowngrade ? `<div style="font-size:11px;color:var(--accent-yellow);margin-top:4px;">⚠️ 事件降档已触发</div>` : ''}
-      </div>
-
-      <div style="border-top:1px solid var(--border);padding-top:10px;margin-top:10px;">
-        <div style="display:flex;justify-content:space-between;font-size:13px;">
-          <span>📊 今日操作：基准1份</span>
-          <span class="${grade.color}" style="font-weight:800;font-size:18px;">
-            ${grade.shares + (addResult.shouldAdd ? addResult.shares : 0)}份
-          </span>
-        </div>
-      </div>
+      <!-- 迷你走势图 -->
+      ${generateMiniChart(data.ndx.recentCloses)}
     </div>
 
     <!-- 事件日历 -->
@@ -1450,16 +1697,9 @@ function loadSettings() {
   } catch (e) {
     console.warn('Settings load failed:', e);
   }
-
-  // 填充设置表单
-  document.getElementById('setStartDate').value = userSettings.startDate || '';
-  document.getElementById('setTotalAssets').value = userSettings.totalAssets || 1.0;
 }
 
 function saveSettings() {
-  userSettings.startDate = document.getElementById('setStartDate').value;
-  userSettings.totalAssets = parseFloat(document.getElementById('setTotalAssets').value) || 1.0;
-
   localStorage.setItem('nasdaq_dca_settings', JSON.stringify(userSettings));
   closeSettings();
 
@@ -1473,6 +1713,7 @@ function saveSettings() {
 }
 
 function toggleSettings() {
+  renderProfileUI();
   document.getElementById('settingsOverlay').classList.add('show');
 }
 
@@ -1482,110 +1723,37 @@ function closeSettings(e) {
   }
 }
 
-// ===== 首次使用引导 =====
-
-function showOnboarding() {
-  const overlay = document.getElementById('onboardingOverlay');
-  overlay.style.display = 'flex';
-  // 设置默认日期为今天
-  document.getElementById('onboardStartDate').value = new Date().toISOString().split('T')[0];
-}
-
-function saveOnboarding() {
-  const startDate = document.getElementById('onboardStartDate').value;
-  const frequency = document.getElementById('onboardFrequency').value;
-  const method = document.getElementById('onboardMethod').value;
-  const baseShares = parseFloat(document.getElementById('onboardBaseShares').value) || 1;
-  const assetRatio = parseFloat(document.getElementById('onboardAssetRatio').value) || 1.0;
-
-  if (!startDate) {
-    alert('请选择开始定投日期');
-    return;
-  }
-
-  userSettings = {
-    startDate: startDate,
-    frequency: frequency,
-    method: method,
-    baseShares: baseShares,
-    totalAssets: assetRatio,
-    weeklyBase: 1000,
-    holdings: 16,
-    onboarded: true,
-  };
-
-  localStorage.setItem('nasdaq_dca_settings', JSON.stringify(userSettings));
-
-  // 隐藏引导，开始加载数据
-  document.getElementById('onboardingOverlay').style.display = 'none';
-
-  // 初始化数据加载
-  initApp();
-}
-
-// 初始化应用（引导完成后调用）
-async function initApp() {
-  // 速度优化：优先读GitHub缓存（秒开），再后台拉新数据
-  try {
-    const githubCache = await fetchGitHubCache();
-    if (githubCache) {
-      githubCache._source = 'github-cache';
-      marketData = githubCache;
-      renderAllTabs(githubCache);
-      updateHeaderStatus(githubCache);
-      document.getElementById('loadingState').style.display = 'none';
-      fetchAllMarketData().then(fresh => {
-        if (fresh && !fresh._mock && !fresh._stale) {
-          marketData = fresh;
-          renderAllTabs(fresh);
-          updateHeaderStatus(fresh);
-        }
-      }).catch(() => {});
-      return;
-    }
-  } catch (e) {
-    console.warn('GitHub cache fetch failed:', e);
-  }
-
-  // 无GitHub缓存，尝试localStorage缓存
-  const localCached = loadCachedData();
-  if (localCached) {
-    localCached._source = 'local-cache';
-    marketData = localCached;
-    renderAllTabs(localCached);
-    updateHeaderStatus(localCached);
-    document.getElementById('loadingState').style.display = 'none';
-    fetchAllMarketData().then(fresh => {
-      if (fresh && !fresh._mock) {
-        marketData = fresh;
-        renderAllTabs(fresh);
-        updateHeaderStatus(fresh);
-      }
-    }).catch(() => {});
-    return;
-  }
-
-  // 完全无缓存，走完整加载
-  refreshData();
-}
-
 // ===== 定投记录 =====
 
-function getInvestHistory() {
+function getInvestHistory(profileId) {
   try {
     const saved = localStorage.getItem('nasdaq_dca_history');
-    return saved ? JSON.parse(saved) : [];
+    const all = saved ? JSON.parse(saved) : [];
+    // 如果指定了 profileId，则只返回该角色的记录
+    if (profileId) {
+      return all.filter(h => h.profileId === profileId);
+    }
+    // 默认返回当前角色的记录
+    return all.filter(h => h.profileId === currentProfileId);
   } catch (e) {
     return [];
   }
 }
 
 function recordTodayInvest(data) {
-  const history = getInvestHistory();
   const today = formatDateStr(new Date());
 
-  // 检查今天是否已记录
-  if (history.find(h => h.date === today)) return;
+  // 读取全部历史记录（不过滤角色）
+  let allHistory = [];
+  try {
+    const saved = localStorage.getItem('nasdaq_dca_history');
+    allHistory = saved ? JSON.parse(saved) : [];
+  } catch (e) {
+    allHistory = [];
+  }
+
+  // 检查今天是否已记录（当前角色）
+  if (allHistory.find(h => h.date === today && h.profileId === currentProfileId)) return;
 
   const grade = data.peGrade;
   const addResult = calculateAdditionalBuy(data);
@@ -1598,8 +1766,10 @@ function recordTodayInvest(data) {
       date: today,
       type: '周四定投',
       amount: grade.shares * userSettings.weeklyBase,
+      shares: grade.shares,
       pe: data.pe,
       ndx: data.ndx.price,
+      profileId: currentProfileId,
     });
   }
 
@@ -1609,20 +1779,31 @@ function recordTodayInvest(data) {
       date: today,
       type: '额外加仓',
       amount: addResult.shares * userSettings.weeklyBase,
+      shares: addResult.shares,
       pe: data.pe,
       ndx: data.ndx.price,
+      profileId: currentProfileId,
     });
   }
 
   if (records.length > 0) {
-    history.push(...records);
-    localStorage.setItem('nasdaq_dca_history', JSON.stringify(history));
+    allHistory.push(...records);
+    localStorage.setItem('nasdaq_dca_history', JSON.stringify(allHistory));
   }
 }
 
 function clearHistory() {
-  if (confirm('确定要清空所有定投记录吗？')) {
-    localStorage.removeItem('nasdaq_dca_history');
+  if (confirm('确定要清空当前角色的所有定投记录吗？')) {
+    // 读取全部记录，移除当前角色的记录
+    let allHistory = [];
+    try {
+      const saved = localStorage.getItem('nasdaq_dca_history');
+      allHistory = saved ? JSON.parse(saved) : [];
+    } catch (e) {
+      allHistory = [];
+    }
+    allHistory = allHistory.filter(h => h.profileId !== currentProfileId);
+    localStorage.setItem('nasdaq_dca_history', JSON.stringify(allHistory));
     renderHistoryTab();
   }
 }
