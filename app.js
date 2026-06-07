@@ -237,53 +237,64 @@ let consecutiveAddDays = 0;
 
 // ===== 初始化 =====
 document.addEventListener('DOMContentLoaded', async () => {
-  loadProfiles();
-  loadSettings();
-  renderProfileUI();
-
-  // 速度优化：优先读GitHub缓存（秒开），再后台拉新数据
   try {
-    const githubCache = await fetchGitHubCache();
-    if (githubCache) {
-      githubCache._source = 'github-cache';
-      marketData = githubCache;
-      renderAllTabs(githubCache);
-      updateHeaderStatus(githubCache);
+    loadProfiles();
+    loadSettings();
+    renderProfileUI();
+
+    // 速度优化：优先读GitHub缓存（秒开），再后台拉新数据
+    try {
+      const githubCache = await fetchGitHubCache();
+      if (githubCache) {
+        githubCache._source = 'github-cache';
+        marketData = githubCache;
+        renderAllTabs(githubCache);
+        updateHeaderStatus(githubCache);
+        document.getElementById('loadingState').style.display = 'none';
+        // 后台静默尝试获取更新数据
+        fetchAllMarketData().then(fresh => {
+          if (fresh && !fresh._mock && !fresh._stale) {
+            marketData = fresh;
+            renderAllTabs(fresh);
+            updateHeaderStatus(fresh);
+          }
+        }).catch(() => {});
+        return; // 有缓存就不再走loading流程
+      }
+    } catch (e) {
+      console.warn('GitHub cache fetch failed:', e);
+    }
+
+    // 无GitHub缓存，尝试localStorage缓存
+    const localCached = loadCachedData();
+    if (localCached) {
+      localCached._source = 'local-cache';
+      marketData = localCached;
+      renderAllTabs(localCached);
+      updateHeaderStatus(localCached);
       document.getElementById('loadingState').style.display = 'none';
-      // 后台静默尝试获取更新数据
       fetchAllMarketData().then(fresh => {
-        if (fresh && !fresh._mock && !fresh._stale) {
+        if (fresh && !fresh._mock) {
           marketData = fresh;
           renderAllTabs(fresh);
           updateHeaderStatus(fresh);
         }
       }).catch(() => {});
-      return; // 有缓存就不再走loading流程
+      return;
     }
-  } catch (e) {
-    console.warn('GitHub cache fetch failed:', e);
-  }
 
-  // 无GitHub缓存，尝试localStorage缓存
-  const localCached = loadCachedData();
-  if (localCached) {
-    localCached._source = 'local-cache';
-    marketData = localCached;
-    renderAllTabs(localCached);
-    updateHeaderStatus(localCached);
+    // 完全无缓存，走完整加载
+    await refreshData();
+  } catch (err) {
+    console.error('Initialization error:', err);
     document.getElementById('loadingState').style.display = 'none';
-    fetchAllMarketData().then(fresh => {
-      if (fresh && !fresh._mock) {
-        marketData = fresh;
-        renderAllTabs(fresh);
-        updateHeaderStatus(fresh);
-      }
-    }).catch(() => {});
-    return;
+    document.getElementById('errorState').style.display = 'block';
+    document.getElementById('errorMsg').textContent = '初始化失败: ' + (err.message || '未知错误');
+    const statusBadge = document.getElementById('statusBadge');
+    const statusText = document.getElementById('statusText');
+    if (statusBadge) statusBadge.className = 'status-badge error';
+    if (statusText) statusText.textContent = '错误';
   }
-
-  // 完全无缓存，走完整加载
-  refreshData();
 });
 
 // 读取GitHub上的cache.json
@@ -936,11 +947,11 @@ function analyzeTrend(data) {
 function generateDataPersuasion(data) {
   const pe = data.pe;
   const assetRatio = userSettings.totalAssets; // 占比系数
+  const baseShares = userSettings.baseShares || 1;
   // 兼容缓存数据中shares或amount字段
-  const weeklyShares = data.peGrade.shares || (data.peGrade.amount ? data.peGrade.amount / 1000 : 1);
-  // 每周定投占总资产比例 = 份数 × 基准 / 总资产
-  // 简化：1份基准定投占总资产的基准比例约0.15%，乘以系数
-  const weeklyRatio = (0.15 * weeklyShares * assetRatio).toFixed(4);
+  const weeklyShares = data.peGrade.shares || (data.peGrade.amount ? data.peGrade.amount / 1000 : baseShares);
+  // 每周定投占总资产比例 = baseShares * 0.15 * assetRatio
+  const weeklyRatio = (baseShares * 0.15 * assetRatio).toFixed(2);
 
   // 历史定投收益概率（基于PE起点）
   let prob12m = '70%';
@@ -969,7 +980,7 @@ function generateDataPersuasion(data) {
   const totalShares = totalInvestedAmount / 1000;
   // 累计投入占总资产比例（用系数简化）
   const investedRatio = totalShares > 0
-    ? (0.15 * totalShares * assetRatio).toFixed(2)
+    ? (baseShares * 0.15 * totalShares * assetRatio).toFixed(2)
     : '0.00';
 
   return {
@@ -1024,6 +1035,55 @@ function renderTodayTab(data) {
 
   // 连续加仓警告
   const consecutiveWarning = addResult.warning || '';
+
+  // 构建详细决策理由 bullet points
+  const peMid = 26.5; // 长期中枢中值
+  const peDiffPct = ((pe - peMid) / peMid * 100).toFixed(0);
+  const peDirection = pe > peMid ? '高于' : '低于';
+
+  let actionReasons = [];
+  // PE档位说明
+  const peThresholds = [
+    { max: 25, label: '加倍档（≤25），估值偏低', color: 'green' },
+    { max: 28, label: '1.5倍档（25-28），估值合理偏低', color: 'blue' },
+    { max: 32, label: '正常档（28-32），估值合理', color: 'blue' },
+    { max: 35, label: '半额档（32-35），估值偏高', color: 'yellow' },
+    { max: 40, label: '最低档（35-40），估值偏高', color: 'orange' },
+    { max: 999, label: '暂停档（>40），估值过高', color: 'red' },
+  ];
+  const peBand = peThresholds.find(t => pe <= t.max) || peThresholds[peThresholds.length - 1];
+  actionReasons.push(`PE=${pe.toFixed(1)}倍，处于${peBand.label}`);
+  actionReasons.push(`${peDirection}长期中枢25-28倍约${Math.abs(peDiffPct)}%`);
+
+  if (grade.shares === 0) {
+    actionReasons.push('等待PE回落至35以下再恢复定投');
+  } else if (grade.shares >= 1.5) {
+    actionReasons.push('当前估值较低，建议积极收集筹码');
+  }
+
+  if (addResult.shouldAdd && addResult.shares > 0) {
+    const dropDays = Math.abs(Math.floor(data.ndx.change / 2));
+    actionReasons.push(`前日跌${data.ndx.change.toFixed(2)}%，触发加仓条件`);
+  }
+
+  // 事件影响
+  const upcomingEvents = getUpcomingEvents(5);
+  const majorEventSoon = upcomingEvents.find(e => e.level === '一级');
+  if (majorEventSoon) {
+    const eventDateObj = new Date(majorEventSoon.date + 'T12:00:00');
+    const eventDateText = `${eventDateObj.getMonth() + 1}月${eventDateObj.getDate()}日`;
+    actionReasons.push(`${eventDateText}${majorEventSoon.name}发布，建议观望`);
+  }
+
+  if (eventDowngrade) {
+    actionReasons.push(`事件降档：${addResult.step3}`);
+  }
+
+  if (consecutiveWarning) {
+    actionReasons.push(consecutiveWarning);
+  }
+
+  const actionReasonsHTML = actionReasons.map(r => `<li style="margin-bottom:4px;">${r}</li>`).join('');
 
   // 非交易日提示
   const nonTradingNote = !data.isTradingDay
@@ -1093,11 +1153,19 @@ function renderTodayTab(data) {
 
       <div style="border-top:1px solid var(--border);padding-top:10px;margin-top:10px;">
         <div style="display:flex;justify-content:space-between;font-size:13px;">
-          <span>📊 今日操作：基准1份</span>
+          <span>📊 今日操作：基准${userSettings.baseShares}份</span>
           <span class="${grade.color}" style="font-weight:800;font-size:18px;">
-            ${grade.shares + (addResult.shouldAdd ? addResult.shares : 0)}份
+            ${(grade.shares + (addResult.shouldAdd ? addResult.shares : 0)).toFixed(1)}份
           </span>
         </div>
+      </div>
+
+      <!-- 详细决策理由 -->
+      <div style="border-top:1px solid var(--border);padding-top:10px;margin-top:10px;">
+        <div style="font-size:12px;font-weight:700;color:var(--text-secondary);margin-bottom:6px;">📋 决策理由</div>
+        <ul style="font-size:12px;color:var(--text-secondary);line-height:1.6;padding-left:16px;margin:0;">
+          ${actionReasonsHTML}
+        </ul>
       </div>
     </div>
 
@@ -1453,6 +1521,9 @@ function renderHistoryTab() {
           <div style="font-size:12px;margin-top:8px;">记录将自动保存在本地</div>
         </div>
       </div>
+      <div style="text-align:center;margin-top:8px;">
+        <button onclick="showAddRecordForm()" style="padding:8px 16px;background:rgba(34,197,94,0.15);color:var(--accent-green);border:1px solid rgba(34,197,94,0.3);border-radius:8px;font-size:12px;cursor:pointer;">➕ 手动添加记录</button>
+      </div>
     `;
     return;
   }
@@ -1481,8 +1552,10 @@ function renderHistoryTab() {
         </div>
       `).join('')}
     </div>
-    <div style="text-align:center;margin-top:8px;">
-      <button onclick="clearHistory()" style="padding:8px 16px;background:rgba(239,68,68,0.15);color:var(--accent-red);border:1px solid rgba(239,68,68,0.3);border-radius:8px;font-size:12px;cursor:pointer;">清空记录</button>
+    <div style="text-align:center;margin-top:8px;display:flex;gap:8px;justify-content:center;">
+      <button onclick="showAddRecordForm()" style="padding:8px 16px;background:rgba(34,197,94,0.15);color:var(--accent-green);border:1px solid rgba(34,197,94,0.3);border-radius:8px;font-size:12px;cursor:pointer;">➕ 手动添加记录</button>
+      <button onclick="clearManualHistory()" style="padding:8px 16px;background:rgba(234,179,8,0.15);color:var(--accent-yellow);border:1px solid rgba(234,179,8,0.3);border-radius:8px;font-size:12px;cursor:pointer;">清空手动记录</button>
+      <button onclick="clearAllHistory()" style="padding:8px 16px;background:rgba(239,68,68,0.15);color:var(--accent-red);border:1px solid rgba(239,68,68,0.3);border-radius:8px;font-size:12px;cursor:pointer;">清空全部</button>
     </div>
   `;
 }
@@ -1646,7 +1719,7 @@ async function refreshData() {
   // 显示加载状态
   loading.style.display = 'flex';
   error.style.display = 'none';
-  refreshBtn.classList.add('spinning');
+  if (refreshBtn) refreshBtn.classList.add('spinning');
 
   try {
     const data = await fetchAllMarketData();
@@ -1677,11 +1750,11 @@ async function refreshData() {
       document.getElementById('errorMsg').textContent = `数据加载失败: ${err.message}`;
       const statusBadge = document.getElementById('statusBadge');
       const statusText = document.getElementById('statusText');
-      statusBadge.className = 'status-badge error';
-      statusText.textContent = '离线';
+      if (statusBadge) statusBadge.className = 'status-badge error';
+      if (statusText) statusText.textContent = '离线';
     }
   } finally {
-    refreshBtn.classList.remove('spinning');
+    if (refreshBtn) refreshBtn.classList.remove('spinning');
   }
 }
 
@@ -1793,8 +1866,11 @@ function recordTodayInvest(data) {
 }
 
 function clearHistory() {
-  if (confirm('确定要清空当前角色的所有定投记录吗？')) {
-    // 读取全部记录，移除当前角色的记录
+  clearAllHistory();
+}
+
+function clearManualHistory() {
+  if (confirm('确定要清空手动添加的记录吗？默认角色的初始记录将保留。')) {
     let allHistory = [];
     try {
       const saved = localStorage.getItem('nasdaq_dca_history');
@@ -1802,10 +1878,117 @@ function clearHistory() {
     } catch (e) {
       allHistory = [];
     }
-    allHistory = allHistory.filter(h => h.profileId !== currentProfileId);
+    // 只删除手动添加的记录（isManual=true），保留默认初始记录
+    allHistory = allHistory.filter(h => {
+      if (h.profileId !== currentProfileId) return true;
+      if (h.date === '2026-06-05' && h.profileId === 'default') return true;
+      if (!h.isManual) return true;
+      return false;
+    });
     localStorage.setItem('nasdaq_dca_history', JSON.stringify(allHistory));
     renderHistoryTab();
   }
+}
+
+function clearAllHistory() {
+  if (confirm('确定要清空当前角色的所有定投记录吗？默认角色的初始记录（2026-06-05）将保留。')) {
+    let allHistory = [];
+    try {
+      const saved = localStorage.getItem('nasdaq_dca_history');
+      allHistory = saved ? JSON.parse(saved) : [];
+    } catch (e) {
+      allHistory = [];
+    }
+    // 保留默认角色的初始记录
+    allHistory = allHistory.filter(h => {
+      if (h.profileId !== currentProfileId) return true;
+      if (h.date === '2026-06-05' && h.profileId === 'default') return true;
+      return false;
+    });
+    localStorage.setItem('nasdaq_dca_history', JSON.stringify(allHistory));
+    renderHistoryTab();
+  }
+}
+
+function showAddRecordForm() {
+  const today = formatDateStr(new Date());
+  const tab = document.getElementById('tab-history');
+  // 在tab顶部插入表单（如果已存在则先移除）
+  const existingForm = document.getElementById('manualRecordForm');
+  if (existingForm) {
+    existingForm.remove();
+    return;
+  }
+
+  const formHTML = `
+    <div id="manualRecordForm" class="card" style="border:1px solid var(--accent-green);">
+      <div class="card-title"><span class="emoji">➕</span>手动添加记录</div>
+      <div class="setting-group">
+        <div class="setting-label">日期</div>
+        <input type="date" class="setting-input" id="manualRecordDate" value="${today}">
+      </div>
+      <div class="setting-group">
+        <div class="setting-label">类型</div>
+        <select class="setting-input" id="manualRecordType" style="background:var(--bg-card);color:var(--text-primary);">
+          <option value="周四定投">周四定投</option>
+          <option value="额外加仓">额外加仓</option>
+        </select>
+      </div>
+      <div class="setting-group">
+        <div class="setting-label">份数</div>
+        <input type="number" class="setting-input" id="manualRecordShares" value="1" step="0.1" min="0.1">
+      </div>
+      <div style="display:flex;gap:8px;">
+        <button onclick="saveManualRecord()" class="settings-save" style="flex:1;background:var(--accent-green);">保存</button>
+        <button onclick="document.getElementById('manualRecordForm').remove()" class="settings-save" style="flex:1;background:var(--text-muted);">取消</button>
+      </div>
+    </div>
+  `;
+  tab.insertAdjacentHTML('afterbegin', formHTML);
+}
+
+function saveManualRecord() {
+  const date = document.getElementById('manualRecordDate').value;
+  const type = document.getElementById('manualRecordType').value;
+  const shares = parseFloat(document.getElementById('manualRecordShares').value) || 1;
+
+  if (!date) {
+    alert('请选择日期');
+    return;
+  }
+
+  let allHistory = [];
+  try {
+    const saved = localStorage.getItem('nasdaq_dca_history');
+    allHistory = saved ? JSON.parse(saved) : [];
+  } catch (e) {
+    allHistory = [];
+  }
+
+  // 检查该日期是否已有同类型记录（当前角色）
+  const exists = allHistory.find(h => h.date === date && h.type === type && h.profileId === currentProfileId);
+  if (exists) {
+    if (!confirm(`该日期已有${type}记录，是否继续添加？`)) return;
+  }
+
+  const record = {
+    date: date,
+    type: type,
+    amount: shares * 1000,
+    shares: shares,
+    pe: marketData ? marketData.pe : 0,
+    ndx: marketData ? marketData.ndx.price : 0,
+    profileId: currentProfileId,
+    isManual: true,
+  };
+
+  allHistory.push(record);
+  localStorage.setItem('nasdaq_dca_history', JSON.stringify(allHistory));
+
+  // 移除表单并刷新
+  const form = document.getElementById('manualRecordForm');
+  if (form) form.remove();
+  renderHistoryTab();
 }
 
 // ===== 数据缓存 =====
