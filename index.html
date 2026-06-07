@@ -6,6 +6,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="theme-color" content="#0f172a">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self' https://*;">
   <title>纳指定投助手</title>
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="icon-192.png">
@@ -629,6 +630,12 @@
       line-height: 1.5;
     }
 
+    .disclaimer strong {
+      color: var(--accent-yellow);
+      display: block;
+      margin-bottom: 4px;
+    }
+
     /* Refresh button */
     .refresh-btn {
       background: none;
@@ -738,6 +745,120 @@
       border: 1px solid rgba(59, 130, 246, 0.3);
       color: var(--accent-blue);
     }
+
+    /* Modal */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.7);
+      z-index: 300;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .modal-overlay.show {
+      display: flex;
+    }
+
+    .modal-content {
+      background: var(--bg-card);
+      border-radius: var(--radius);
+      padding: 20px;
+      max-width: 400px;
+      width: 100%;
+      max-height: 80vh;
+      overflow-y: auto;
+      border: 1px solid var(--border);
+    }
+
+    .modal-title {
+      font-size: 16px;
+      font-weight: 700;
+      margin-bottom: 12px;
+    }
+
+    .modal-text {
+      font-size: 13px;
+      color: var(--text-secondary);
+      line-height: 1.7;
+      margin-bottom: 16px;
+    }
+
+    .modal-btn {
+      width: 100%;
+      padding: 12px;
+      background: var(--accent-blue);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    /* Swipe hint */
+    .swipe-hint {
+      position: fixed;
+      bottom: 80px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(59, 130, 246, 0.9);
+      color: white;
+      padding: 8px 16px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+      z-index: 150;
+      animation: fadeInOut 4s forwards;
+      pointer-events: none;
+    }
+
+    @keyframes fadeInOut {
+      0% { opacity: 0; transform: translateX(-50%) translateY(10px); }
+      15% { opacity: 1; transform: translateX(-50%) translateY(0); }
+      85% { opacity: 1; transform: translateX(-50%) translateY(0); }
+      100% { opacity: 0; transform: translateX(-50%) translateY(-10px); }
+    }
+
+    /* Help Tab */
+    .faq-item {
+      margin-bottom: 12px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      padding-bottom: 12px;
+    }
+
+    .faq-item:last-child {
+      border-bottom: none;
+      margin-bottom: 0;
+      padding-bottom: 0;
+    }
+
+    .faq-q {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 6px;
+    }
+
+    .faq-a {
+      font-size: 12px;
+      color: var(--text-secondary);
+      line-height: 1.6;
+    }
+
+    .help-link {
+      color: var(--accent-blue);
+      text-decoration: none;
+    }
+
+    .help-link:hover {
+      text-decoration: underline;
+    }
   </style>
 </head>
 <body>
@@ -745,27 +866,30 @@
   <!-- Header -->
   <div class="header">
     <div class="header-top">
-      <h1>📊 纳指定投助手</h1>
-      <div id="headerProfile" style="font-size:11px;color:var(--text-muted);margin-top:2px;">👤 默认账户</div>
+      <div>
+        <h1>纳指定投助手</h1>
+        <div id="headerProfile" style="font-size:11px;color:var(--text-muted);margin-top:2px;">默认账户</div>
+      </div>
       <div style="display:flex;align-items:center;gap:8px;">
         <span id="statusBadge" class="status-badge loading">
           <span class="status-dot"></span>
           <span id="statusText">加载中</span>
         </span>
-        <button class="refresh-btn" id="refreshBtn" onclick="refreshData()" title="刷新数据">🔄</button>
-        <button class="gear-btn" onclick="toggleSettings()" title="设置">⚙️</button>
+        <button class="refresh-btn" id="refreshBtn" onclick="refreshData()" title="刷新数据">刷新</button>
+        <button class="gear-btn" onclick="toggleSettings()" title="设置">设置</button>
       </div>
     </div>
     <div class="header-time" id="headerTime">--</div>
   </div>
 
   <!-- Tab Navigation -->
-  <div class="tab-nav">
-    <button class="tab-btn active" onclick="switchTab('today')">今日决策</button>
-    <button class="tab-btn" onclick="switchTab('short')">短期建议</button>
-    <button class="tab-btn" onclick="switchTab('mid')">中期复盘</button>
-    <button class="tab-btn" onclick="switchTab('long')">长期趋势</button>
-    <button class="tab-btn" onclick="switchTab('history')">定投记录</button>
+  <div class="tab-nav" id="tabNav">
+    <button class="tab-btn active" onclick="switchTab('today', this)">今日决策</button>
+    <button class="tab-btn" onclick="switchTab('short', this)">短期建议</button>
+    <button class="tab-btn" onclick="switchTab('mid', this)">中期复盘</button>
+    <button class="tab-btn" onclick="switchTab('long', this)">长期趋势</button>
+    <button class="tab-btn" onclick="switchTab('history', this)">定投记录</button>
+    <button class="tab-btn" onclick="switchTab('help', this)">帮助</button>
   </div>
 
   <!-- Main Content -->
@@ -785,7 +909,7 @@
     </div>
 
     <!-- Today Tab -->
-    <div id="tab-today" class="tab-content">
+    <div id="tab-today" class="tab-content active">
       <!-- Will be populated by JS -->
     </div>
 
@@ -809,16 +933,96 @@
       <!-- Will be populated by JS -->
     </div>
 
+    <!-- Help Tab -->
+    <div id="tab-help" class="tab-content">
+      <div class="card">
+        <div class="card-title"><span class="emoji">📖</span>策略说明</div>
+        <div style="font-size:13px;color:var(--text-secondary);line-height:1.8;">
+          <div><strong>定投规则：</strong>每周四执行基准定投，根据PE档位自动调整份数。</div>
+          <div style="margin-top:8px;"><strong>PE档位：</strong></div>
+          <div>PE ≤ 25：加倍（2份）| 25-28：1.5倍 | 28-32：正常（1份）</div>
+          <div>32-35：半额（0.5份）| 35-40：最低（0.3份）| >40：暂停</div>
+          <div style="margin-top:8px;"><strong>加仓规则：</strong></div>
+          <div>跌2-4%加仓0.5份 | 跌≥4%加仓1份 | 跌≥7%极端超跌跳过</div>
+          <div>一级事件前1日、VIX>30+周跌>5%、年末季末 → 降一档</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title"><span class="emoji">❓</span>常见问题</div>
+        <div class="faq-item">
+          <div class="faq-q">1. PE数据准确吗？</div>
+          <div class="faq-a">PE为估算值，基于纳指价格与历史PE关系推算，非官方精确数据，仅供参考。</div>
+        </div>
+        <div class="faq-item">
+          <div class="faq-q">2. 数据更新频率？</div>
+          <div class="faq-a">实时数据来自Yahoo Finance，更新延迟约15-20分钟。缓存有效期5分钟。</div>
+        </div>
+        <div class="faq-item">
+          <div class="faq-q">3. 为什么周四定投？</div>
+          <div class="faq-a">历史统计周四下跌概率略高，长期看可获得轻微成本优势。可自定义为其他日期。</div>
+        </div>
+        <div class="faq-item">
+          <div class="faq-q">4. 可以修改定投金额吗？</div>
+          <div class="faq-a">可以。在设置中调整"每期基准份数"，系统会自动按档位系数计算。</div>
+        </div>
+        <div class="faq-item">
+          <div class="faq-q">5. 多角色有什么用？</div>
+          <div class="faq-a">可为不同账户（如个人、家庭、子女）分别设置定投参数和独立记录。</div>
+        </div>
+        <div class="faq-item">
+          <div class="faq-q">6. 数据会丢失吗？</div>
+          <div class="faq-a">所有数据保存在浏览器本地。建议定期使用"导出数据"功能备份。</div>
+        </div>
+        <div class="faq-item">
+          <div class="faq-q">7. 为什么有时显示缓存数据？</div>
+          <div class="faq-a">当网络不稳定或API受限时，会自动使用最近一次成功获取的缓存数据。</div>
+        </div>
+        <div class="faq-item">
+          <div class="faq-q">8. 综合评分怎么算的？</div>
+          <div class="faq-a">基于PE、VIX、技术面、宏观事件四个维度加权评分，0-100分，越高越适合定投。</div>
+        </div>
+        <div class="faq-item">
+          <div class="faq-q">9. 可以离线使用吗？</div>
+          <div class="faq-a">安装为PWA后可离线查看缓存数据和记录，但无法获取实时行情。</div>
+        </div>
+        <div class="faq-item">
+          <div class="faq-q">10. 如何反馈问题？</div>
+          <div class="faq-a">请通过下方GitHub Issues链接提交反馈，我们会尽快处理。</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title"><span class="emoji">📡</span>数据来源</div>
+        <div style="font-size:13px;color:var(--text-secondary);line-height:1.8;">
+          <div>行情数据：Yahoo Finance API（延迟15-20分钟）</div>
+          <div>PE估算：基于历史价格-PE关系模型</div>
+          <div>经济事件：公开日历数据</div>
+          <div>所有数据仅供参考，不构成投资建议。</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title"><span class="emoji">💬</span>反馈与支持</div>
+        <div style="font-size:13px;color:var(--text-secondary);line-height:1.8;">
+          <div>遇到问题或有建议？欢迎提交反馈：</div>
+          <div style="margin-top:8px;">
+            <a href="https://github.com/yourusername/nasdaq-dca-app/issues" target="_blank" rel="noopener noreferrer" class="help-link">GitHub Issues</a>
+          </div>
+        </div>
+      </div>
+    </div>
+
   </div>
 
   <!-- Settings Panel -->
   <div class="settings-overlay" id="settingsOverlay" onclick="closeSettings(event)">
     <div class="settings-panel" onclick="event.stopPropagation()">
       <div class="settings-handle"></div>
-      <div class="settings-title">⚙️ 个人定投参数</div>
+      <div class="settings-title">个人定投参数</div>
 
       <!-- 角色管理区域 -->
-      <div class="section-divider">👤 角色管理</div>
+      <div class="section-divider">角色管理</div>
 
       <div class="setting-group">
         <div class="setting-label">当前角色</div>
@@ -833,12 +1037,12 @@
         </div>
 
         <div class="setting-group">
-          <div class="setting-label">📅 开始定投日期</div>
+          <div class="setting-label">开始定投日期</div>
           <input type="date" class="setting-input" id="profileStartDate">
         </div>
 
         <div class="setting-group">
-          <div class="setting-label">⏰ 定投频率</div>
+          <div class="setting-label">定投频率</div>
           <select class="setting-input" id="profileFrequency" style="background:var(--bg-card);color:var(--text-primary);">
             <option value="weekly">每周定投</option>
             <option value="biweekly">每两周定投</option>
@@ -847,33 +1051,59 @@
         </div>
 
         <div class="setting-group">
-          <div class="setting-label">💰 每期基准份数</div>
+          <div class="setting-label">每期基准份数</div>
           <input type="number" class="setting-input" id="profileBaseShares" value="1" step="0.1" min="0.1">
         </div>
 
         <div class="setting-group">
-          <div class="setting-label">📈 定投占比系数</div>
+          <div class="setting-label">定投占比系数</div>
           <input type="number" class="setting-input" id="profileAssetRatio" value="1.0" step="0.1" min="0.1">
         </div>
 
-        <button class="settings-save" onclick="saveCurrentProfile()" style="background:var(--accent-blue);">💾 保存角色</button>
-        <button id="deleteProfileBtn" class="settings-save" onclick="deleteCurrentProfile()" style="background:rgba(239,68,68,0.2);color:var(--accent-red);margin-top:8px;">🗑️ 删除角色</button>
+        <button class="settings-save" onclick="saveCurrentProfile()" style="background:var(--accent-blue);">保存角色</button>
+        <button id="deleteProfileBtn" class="settings-save" onclick="deleteCurrentProfile()" style="background:rgba(239,68,68,0.2);color:var(--accent-red);margin-top:8px;">删除角色</button>
       </div>
 
       <div style="margin-top:12px;">
-        <button class="settings-save" onclick="addProfile()" style="background:rgba(34,197,94,0.2);color:var(--accent-green);">➕ 添加新角色</button>
+        <button class="settings-save" onclick="addProfile()" style="background:rgba(34,197,94,0.2);color:var(--accent-green);">添加新角色</button>
       </div>
 
-      <div class="section-divider">⚙️ 全局设置</div>
+      <div class="section-divider">数据管理</div>
 
-      <button class="settings-save" onclick="saveSettings()">💾 保存设置</button>
+      <div style="display:flex;gap:8px;">
+        <button class="settings-save" onclick="exportData()" style="flex:1;background:rgba(59,130,246,0.2);color:var(--accent-blue);">导出数据</button>
+        <button class="settings-save" onclick="importData()" style="flex:1;background:rgba(168,85,247,0.2);color:var(--accent-purple);">导入数据</button>
+      </div>
+      <input type="file" id="importFileInput" accept=".json" style="display:none;" onchange="handleImportFile(event)">
+
+      <div class="section-divider">全局设置</div>
+
+      <button class="settings-save" onclick="saveSettings()">保存设置</button>
     </div>
   </div>
 
-  <!-- Disclaimer -->
+  <!-- Disclaimer Modal -->
+  <div class="modal-overlay" id="disclaimerModal">
+    <div class="modal-content">
+      <div class="modal-title">⚠️ 免责声明</div>
+      <div class="modal-text">
+        <strong>在使用本应用前，请仔细阅读以下声明：</strong><br><br>
+        1. <strong>PE为估算值</strong>：本应用显示的市盈率（PE）为基于历史数据模型估算的值，非官方精确数据，可能存在偏差。<br><br>
+        2. <strong>不保证未来收益</strong>：历史数据和分析结果不代表未来表现，定投策略不承诺任何收益。<br><br>
+        3. <strong>数据来源与延迟</strong>：行情数据来自Yahoo Finance等公开渠道，存在15-20分钟延迟，仅供参考。<br><br>
+        4. <strong>建议咨询专业人士</strong>：本应用内容不构成投资建议，投资前请咨询持牌金融顾问。<br><br>
+        5. <strong>投资有风险</strong>：股市有风险，入市需谨慎。请根据自身风险承受能力做出决策。
+      </div>
+      <button class="modal-btn" onclick="acceptDisclaimer()">我已阅读并理解</button>
+    </div>
+  </div>
+
+  <!-- Disclaimer Footer -->
   <div class="disclaimer">
-    ⚠️ 基于公开数据，仅供参考。投资有风险，决策需谨慎。<br>
-    数据来源：Yahoo Finance | 更新延迟约15-20分钟
+    <strong>⚠️ 免责声明</strong>
+    PE为估算值，非官方精确数据。本应用不构成投资建议，不保证未来收益。<br>
+    数据来源：Yahoo Finance（延迟约15-20分钟）。投资有风险，决策前请咨询专业人士。<br>
+    使用本应用即表示您已阅读并理解上述声明。
   </div>
 
   <script src="app.js"></script>

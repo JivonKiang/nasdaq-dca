@@ -21,6 +21,15 @@ const CONFIG = {
   USE_MOCK: false, // 强制使用模拟数据（调试用）
   // GitHub缓存路径（与index.html同目录）
   GITHUB_CACHE_URL: './cache.json',
+  // 数据校验范围
+  VALIDATION: {
+    NDX_MIN: 5000,
+    NDX_MAX: 50000,
+    PE_MIN: 10,
+    PE_MAX: 60,
+    VIX_MIN: 5,
+    VIX_MAX: 100,
+  },
 };
 
 // ===== 用户设置（从当前角色生成）=====
@@ -58,14 +67,32 @@ const DEFAULT_HISTORY_RECORD = {
 let profiles = [];
 let currentProfileId = 'default';
 
+// ===== 校验和工具 =====
+function computeChecksum(str) {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    const char = str.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash;
+  }
+  return hash.toString(16);
+}
+
 function loadProfiles() {
   try {
     const saved = localStorage.getItem('nasdaq_dca_profiles');
+    const checksum = localStorage.getItem('nasdaq_dca_profiles_checksum');
     if (saved) {
-      profiles = JSON.parse(saved);
+      if (checksum && computeChecksum(saved) !== checksum) {
+        console.warn('Profiles checksum mismatch, using defaults');
+        profiles = [];
+      } else {
+        profiles = JSON.parse(saved);
+      }
     }
   } catch (e) {
     console.warn('Profiles load failed:', e);
+    profiles = [];
   }
 
   // 确保默认角色始终存在
@@ -92,7 +119,9 @@ function loadProfiles() {
 }
 
 function saveProfiles() {
-  localStorage.setItem('nasdaq_dca_profiles', JSON.stringify(profiles));
+  const data = JSON.stringify(profiles);
+  localStorage.setItem('nasdaq_dca_profiles', data);
+  localStorage.setItem('nasdaq_dca_profiles_checksum', computeChecksum(data));
   localStorage.setItem('nasdaq_dca_current_profile', currentProfileId);
 }
 
@@ -100,14 +129,24 @@ function ensureDefaultHistoryRecord() {
   let allHistory = [];
   try {
     const saved = localStorage.getItem('nasdaq_dca_history');
-    allHistory = saved ? JSON.parse(saved) : [];
+    const checksum = localStorage.getItem('nasdaq_dca_history_checksum');
+    if (saved) {
+      if (checksum && computeChecksum(saved) !== checksum) {
+        console.warn('History checksum mismatch, using empty');
+        allHistory = [];
+      } else {
+        allHistory = JSON.parse(saved);
+      }
+    }
   } catch (e) {
     allHistory = [];
   }
   const exists = allHistory.find(h => h.date === '2026-06-05' && h.profileId === 'default');
   if (!exists) {
     allHistory.push({ ...DEFAULT_HISTORY_RECORD });
-    localStorage.setItem('nasdaq_dca_history', JSON.stringify(allHistory));
+    const data = JSON.stringify(allHistory);
+    localStorage.setItem('nasdaq_dca_history', data);
+    localStorage.setItem('nasdaq_dca_history_checksum', computeChecksum(data));
   }
 }
 
@@ -235,12 +274,18 @@ let lastFetchTime = 0;
 let currentProxyIndex = 0;
 let consecutiveAddDays = 0;
 
+// ===== Tab 顺序（用于手势和快捷键）=====
+const TAB_ORDER = ['today', 'short', 'mid', 'long', 'history', 'help'];
+
 // ===== 初始化 =====
 document.addEventListener('DOMContentLoaded', async () => {
   try {
     loadProfiles();
     loadSettings();
     renderProfileUI();
+    initTouchGestures();
+    initKeyboardShortcuts();
+    checkDisclaimer();
 
     // 速度优化：优先读GitHub缓存（秒开），再后台拉新数据
     try {
@@ -296,6 +341,222 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (statusText) statusText.textContent = '错误';
   }
 });
+
+// ===== 免责声明 =====
+function checkDisclaimer() {
+  try {
+    const accepted = localStorage.getItem('nasdaq_dca_disclaimer_accepted');
+    if (!accepted) {
+      document.getElementById('disclaimerModal').classList.add('show');
+    }
+  } catch (e) {
+    console.warn('Disclaimer check failed:', e);
+  }
+}
+
+function acceptDisclaimer() {
+  try {
+    localStorage.setItem('nasdaq_dca_disclaimer_accepted', 'true');
+    document.getElementById('disclaimerModal').classList.remove('show');
+  } catch (e) {
+    console.warn('Disclaimer accept failed:', e);
+  }
+}
+
+// ===== 导出/导入数据 =====
+function exportData() {
+  try {
+    const exportObj = {
+      version: '1.0',
+      exportedAt: new Date().toISOString(),
+      profiles: JSON.parse(localStorage.getItem('nasdaq_dca_profiles') || '[]'),
+      currentProfileId: localStorage.getItem('nasdaq_dca_current_profile') || 'default',
+      history: JSON.parse(localStorage.getItem('nasdaq_dca_history') || '[]'),
+      settings: JSON.parse(localStorage.getItem('nasdaq_dca_settings') || '{}'),
+      cache: JSON.parse(localStorage.getItem('nasdaq_dca_cache') || '{}'),
+    };
+    const blob = new Blob([JSON.stringify(exportObj, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `nasdaq-dca-backup-${formatDateStr(new Date())}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    alert('数据已导出');
+  } catch (e) {
+    console.error('Export failed:', e);
+    alert('导出失败: ' + e.message);
+  }
+}
+
+function importData() {
+  document.getElementById('importFileInput').click();
+}
+
+function handleImportFile(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const data = JSON.parse(e.target.result);
+      if (!data.profiles || !Array.isArray(data.profiles)) {
+        throw new Error('无效的数据文件');
+      }
+
+      if (!confirm('导入将覆盖当前所有数据，确定继续吗？')) return;
+
+      localStorage.setItem('nasdaq_dca_profiles', JSON.stringify(data.profiles));
+      localStorage.setItem('nasdaq_dca_profiles_checksum', computeChecksum(JSON.stringify(data.profiles)));
+      if (data.currentProfileId) {
+        localStorage.setItem('nasdaq_dca_current_profile', data.currentProfileId);
+      }
+      if (data.history) {
+        const historyStr = JSON.stringify(data.history);
+        localStorage.setItem('nasdaq_dca_history', historyStr);
+        localStorage.setItem('nasdaq_dca_history_checksum', computeChecksum(historyStr));
+      }
+      if (data.settings) {
+        localStorage.setItem('nasdaq_dca_settings', JSON.stringify(data.settings));
+      }
+      if (data.cache) {
+        localStorage.setItem('nasdaq_dca_cache', JSON.stringify(data.cache));
+      }
+
+      // 重新加载
+      loadProfiles();
+      loadSettings();
+      renderProfileUI();
+      renderHistoryTab();
+      if (marketData) renderAllTabs(marketData);
+
+      alert('数据导入成功');
+    } catch (err) {
+      console.error('Import failed:', err);
+      alert('导入失败: ' + err.message);
+    }
+  };
+  reader.readAsText(file);
+  event.target.value = '';
+}
+
+// ===== 手势操作 =====
+function initTouchGestures() {
+  let startX = 0;
+  let startY = 0;
+  let isScrolling = false;
+
+  document.addEventListener('touchstart', (e) => {
+    startX = e.touches[0].clientX;
+    startY = e.touches[0].clientY;
+    isScrolling = false;
+  }, { passive: true });
+
+  document.addEventListener('touchmove', (e) => {
+    if (isScrolling) return;
+    const dx = Math.abs(e.touches[0].clientX - startX);
+    const dy = Math.abs(e.touches[0].clientY - startY);
+    if (dy > dx && dy > 10) {
+      isScrolling = true;
+    }
+  }, { passive: true });
+
+  document.addEventListener('touchend', (e) => {
+    if (isScrolling) return;
+    const endX = e.changedTouches[0].clientX;
+    const diffX = endX - startX;
+    const threshold = 50;
+
+    if (Math.abs(diffX) > threshold) {
+      const activeTab = document.querySelector('.tab-btn.active');
+      const currentIndex = TAB_ORDER.findIndex(t => {
+        const btn = document.querySelector(`.tab-btn[onclick*="'${t}'"]`);
+        return btn && btn.classList.contains('active');
+      });
+
+      if (currentIndex === -1) return;
+
+      let nextIndex;
+      if (diffX < 0) {
+        nextIndex = Math.min(currentIndex + 1, TAB_ORDER.length - 1);
+      } else {
+        nextIndex = Math.max(currentIndex - 1, 0);
+      }
+
+      if (nextIndex !== currentIndex) {
+        const nextTab = TAB_ORDER[nextIndex];
+        const nextBtn = document.querySelector(`.tab-btn[onclick*="'${nextTab}'"]`);
+        if (nextBtn) {
+          switchTab(nextTab, nextBtn);
+        }
+      }
+    }
+  }, { passive: true });
+
+  // 首次使用显示滑动提示
+  try {
+    const hintShown = localStorage.getItem('nasdaq_dca_swipe_hint_shown');
+    if (!hintShown) {
+      const hint = document.createElement('div');
+      hint.className = 'swipe-hint';
+      hint.textContent = '左右滑动切换Tab';
+      document.body.appendChild(hint);
+      localStorage.setItem('nasdaq_dca_swipe_hint_shown', 'true');
+      setTimeout(() => {
+        if (hint.parentNode) hint.parentNode.removeChild(hint);
+      }, 4500);
+    }
+  } catch (e) {
+    console.warn('Swipe hint failed:', e);
+  }
+}
+
+// ===== 键盘快捷键 =====
+function initKeyboardShortcuts() {
+  document.addEventListener('keydown', (e) => {
+    // 忽略输入框中的按键
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT') {
+      return;
+    }
+
+    const key = e.key.toLowerCase();
+
+    // 1-6 切换Tab
+    if (key >= '1' && key <= '6') {
+      const index = parseInt(key, 10) - 1;
+      if (index < TAB_ORDER.length) {
+        const tabName = TAB_ORDER[index];
+        const btn = document.querySelector(`.tab-btn[onclick*="'${tabName}'"]`);
+        if (btn) switchTab(tabName, btn);
+      }
+      return;
+    }
+
+    switch (key) {
+      case 'r':
+        e.preventDefault();
+        refreshData();
+        break;
+      case 's':
+        e.preventDefault();
+        toggleSettings();
+        break;
+      case 'escape':
+        closeSettings();
+        // 关闭弹窗
+        document.querySelectorAll('.modal-overlay.show').forEach(m => m.classList.remove('show'));
+        break;
+      case 'h':
+        e.preventDefault();
+        const helpBtn = document.querySelector(`.tab-btn[onclick*="'help'"]`);
+        if (helpBtn) switchTab('help', helpBtn);
+        break;
+    }
+  });
+}
 
 // 读取GitHub上的cache.json
 async function fetchGitHubCache() {
@@ -367,7 +628,13 @@ async function fetchViaProxy(url, timeoutMs = 6000) {
       clearTimeout(timer);
       if (response.ok) {
         currentProxyIndex = (currentProxyIndex + i) % CONFIG.CORS_PROXIES.length;
-        return await response.json();
+        const data = await response.json();
+        // 数据校验
+        if (!validateApiResponse(data, url)) {
+          console.warn('API response validation failed for', url);
+          throw new Error('数据校验失败');
+        }
+        return data;
       }
     } catch (e) {
       console.warn(`Proxy ${i} failed:`, e.message);
@@ -376,9 +643,47 @@ async function fetchViaProxy(url, timeoutMs = 6000) {
   throw new Error('所有代理均无法连接');
 }
 
+function validateApiResponse(data, url) {
+  if (!data || typeof data !== 'object') return false;
+  // Yahoo chart API 校验
+  if (url.includes('/v8/finance/chart/')) {
+    const result = data.chart?.result?.[0];
+    if (!result) return false;
+    const meta = result.meta;
+    if (!meta) return false;
+    const price = meta.regularMarketPrice;
+    // NDX 价格范围校验
+    if (url.includes('^NDX') || url.includes('%5ENDX')) {
+      if (typeof price !== 'number' || price < CONFIG.VALIDATION.NDX_MIN || price > CONFIG.VALIDATION.NDX_MAX) {
+        console.warn(`NDX price validation failed: ${price}`);
+        return false;
+      }
+    }
+    // VIX 范围校验
+    if (url.includes('^VIX') || url.includes('%5EVIX')) {
+      if (typeof price !== 'number' || price < CONFIG.VALIDATION.VIX_MIN || price > CONFIG.VALIDATION.VIX_MAX) {
+        console.warn(`VIX validation failed: ${price}`);
+        return false;
+      }
+    }
+  }
+  return true;
+}
+
 async function fetchChartData(symbol, range = '5d', interval = '1d') {
   const url = `${CONFIG.YAHOO_BASE}/v8/finance/chart/${symbol}?interval=${interval}&range=${range}`;
-  return fetchViaProxy(url);
+  try {
+    return await fetchViaProxy(url);
+  } catch (e) {
+    console.warn('fetchChartData failed, trying cache fallback:', e);
+    // 尝试回退到缓存
+    const cached = loadCachedData();
+    if (cached) {
+      cached._stale = true;
+      return cached;
+    }
+    throw e;
+  }
 }
 
 async function fetchMultipleQuotes(symbols) {
@@ -407,7 +712,10 @@ async function fetchPEData() {
       // 解析HTML表格获取最新PE
       const peMatch = html.match(/([\d.]+)\s*<\/td>\s*<td[^>]*>[\d.]+\s*<\/td>\s*<td[^>]*>([\d.]+)\s*<\/td>/);
       if (peMatch) {
-        return parseFloat(peMatch[2]);
+        const pe = parseFloat(peMatch[2]);
+        if (pe >= CONFIG.VALIDATION.PE_MIN && pe <= CONFIG.VALIDATION.PE_MAX) {
+          return pe;
+        }
       }
     }
   } catch (e) {
@@ -474,6 +782,12 @@ async function fetchAllMarketData() {
 
   // 如果PE获取失败，使用估算
   if (!pe) {
+    pe = estimatePE(ndxMeta?.regularMarketPrice);
+  }
+
+  // PE范围校验
+  if (pe < CONFIG.VALIDATION.PE_MIN || pe > CONFIG.VALIDATION.PE_MAX) {
+    console.warn(`PE validation failed: ${pe}, using estimate`);
     pe = estimatePE(ndxMeta?.regularMarketPrice);
   }
 
@@ -1998,6 +2312,7 @@ function calculatePEPercentile(currentPE) {
   // 纳指PE历史范围约15-50，中位数约25-28
   const mean = 27;
   const std = 6;
+
   // 使用正态分布近似
   const z = (currentPE - mean) / std;
   // 近似累积分布函数
@@ -2046,11 +2361,16 @@ function getDayName(day) {
 
 // ===== Tab切换 =====
 
-function switchTab(tabName) {
+function switchTab(tabName, btnElement) {
   document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
   document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
 
-  event.target.classList.add('active');
+  if (btnElement) {
+    btnElement.classList.add('active');
+  } else {
+    const btn = document.querySelector(`.tab-btn[onclick*="'${tabName}'"]`);
+    if (btn) btn.classList.add('active');
+  }
   document.getElementById(`tab-${tabName}`).classList.add('active');
 }
 
@@ -2108,7 +2428,12 @@ async function refreshData() {
 function loadSettings() {
   try {
     const saved = localStorage.getItem('nasdaq_dca_settings');
+    const checksum = localStorage.getItem('nasdaq_dca_settings_checksum');
     if (saved) {
+      if (checksum && computeChecksum(saved) !== checksum) {
+        console.warn('Settings checksum mismatch, using defaults');
+        return;
+      }
       const parsed = JSON.parse(saved);
       userSettings = { ...userSettings, ...parsed };
     }
@@ -2118,7 +2443,9 @@ function loadSettings() {
 }
 
 function saveSettings() {
-  localStorage.setItem('nasdaq_dca_settings', JSON.stringify(userSettings));
+  const data = JSON.stringify(userSettings);
+  localStorage.setItem('nasdaq_dca_settings', data);
+  localStorage.setItem('nasdaq_dca_settings_checksum', computeChecksum(data));
   closeSettings();
 
   // 重新渲染
@@ -2146,7 +2473,15 @@ function closeSettings(e) {
 function getInvestHistory(profileId) {
   try {
     const saved = localStorage.getItem('nasdaq_dca_history');
-    const all = saved ? JSON.parse(saved) : [];
+    const checksum = localStorage.getItem('nasdaq_dca_history_checksum');
+    let all = [];
+    if (saved) {
+      if (checksum && computeChecksum(saved) !== checksum) {
+        console.warn('History checksum mismatch, returning empty');
+        return [];
+      }
+      all = JSON.parse(saved);
+    }
     // 如果指定了 profileId，则只返回该角色的记录
     if (profileId) {
       return all.filter(h => h.profileId === profileId);
@@ -2165,7 +2500,15 @@ function recordTodayInvest(data) {
   let allHistory = [];
   try {
     const saved = localStorage.getItem('nasdaq_dca_history');
-    allHistory = saved ? JSON.parse(saved) : [];
+    const checksum = localStorage.getItem('nasdaq_dca_history_checksum');
+    if (saved) {
+      if (checksum && computeChecksum(saved) !== checksum) {
+        console.warn('History checksum mismatch, using empty');
+        allHistory = [];
+      } else {
+        allHistory = JSON.parse(saved);
+      }
+    }
   } catch (e) {
     allHistory = [];
   }
@@ -2206,7 +2549,9 @@ function recordTodayInvest(data) {
 
   if (records.length > 0) {
     allHistory.push(...records);
-    localStorage.setItem('nasdaq_dca_history', JSON.stringify(allHistory));
+    const dataStr = JSON.stringify(allHistory);
+    localStorage.setItem('nasdaq_dca_history', dataStr);
+    localStorage.setItem('nasdaq_dca_history_checksum', computeChecksum(dataStr));
   }
 }
 
@@ -2219,7 +2564,14 @@ function clearManualHistory() {
     let allHistory = [];
     try {
       const saved = localStorage.getItem('nasdaq_dca_history');
-      allHistory = saved ? JSON.parse(saved) : [];
+      const checksum = localStorage.getItem('nasdaq_dca_history_checksum');
+      if (saved) {
+        if (checksum && computeChecksum(saved) !== checksum) {
+          allHistory = [];
+        } else {
+          allHistory = JSON.parse(saved);
+        }
+      }
     } catch (e) {
       allHistory = [];
     }
@@ -2230,7 +2582,9 @@ function clearManualHistory() {
       if (!h.isManual) return true;
       return false;
     });
-    localStorage.setItem('nasdaq_dca_history', JSON.stringify(allHistory));
+    const dataStr = JSON.stringify(allHistory);
+    localStorage.setItem('nasdaq_dca_history', dataStr);
+    localStorage.setItem('nasdaq_dca_history_checksum', computeChecksum(dataStr));
     renderHistoryTab();
   }
 }
@@ -2240,7 +2594,14 @@ function clearAllHistory() {
     let allHistory = [];
     try {
       const saved = localStorage.getItem('nasdaq_dca_history');
-      allHistory = saved ? JSON.parse(saved) : [];
+      const checksum = localStorage.getItem('nasdaq_dca_history_checksum');
+      if (saved) {
+        if (checksum && computeChecksum(saved) !== checksum) {
+          allHistory = [];
+        } else {
+          allHistory = JSON.parse(saved);
+        }
+      }
     } catch (e) {
       allHistory = [];
     }
@@ -2250,7 +2611,9 @@ function clearAllHistory() {
       if (h.date === '2026-06-05' && h.profileId === 'default') return true;
       return false;
     });
-    localStorage.setItem('nasdaq_dca_history', JSON.stringify(allHistory));
+    const dataStr = JSON.stringify(allHistory);
+    localStorage.setItem('nasdaq_dca_history', dataStr);
+    localStorage.setItem('nasdaq_dca_history_checksum', computeChecksum(dataStr));
     renderHistoryTab();
   }
 }
@@ -2305,7 +2668,14 @@ function saveManualRecord() {
   let allHistory = [];
   try {
     const saved = localStorage.getItem('nasdaq_dca_history');
-    allHistory = saved ? JSON.parse(saved) : [];
+    const checksum = localStorage.getItem('nasdaq_dca_history_checksum');
+    if (saved) {
+      if (checksum && computeChecksum(saved) !== checksum) {
+        allHistory = [];
+      } else {
+        allHistory = JSON.parse(saved);
+      }
+    }
   } catch (e) {
     allHistory = [];
   }
@@ -2328,7 +2698,9 @@ function saveManualRecord() {
   };
 
   allHistory.push(record);
-  localStorage.setItem('nasdaq_dca_history', JSON.stringify(allHistory));
+  const dataStr = JSON.stringify(allHistory);
+  localStorage.setItem('nasdaq_dca_history', dataStr);
+  localStorage.setItem('nasdaq_dca_history_checksum', computeChecksum(dataStr));
 
   // 移除表单并刷新
   const form = document.getElementById('manualRecordForm');
@@ -2340,10 +2712,11 @@ function saveManualRecord() {
 
 function saveCachedData(data) {
   try {
-    localStorage.setItem('nasdaq_dca_cache', JSON.stringify({
+    const payload = JSON.stringify({
       timestamp: data.timestamp,
       data: data,
-    }));
+    });
+    localStorage.setItem('nasdaq_dca_cache', payload);
   } catch (e) {
     console.warn('Cache save failed:', e);
   }
