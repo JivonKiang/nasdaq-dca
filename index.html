@@ -817,21 +817,6 @@
       <div class="settings-title">⚙️ 个人定投参数</div>
 
       <div class="setting-group">
-        <div class="setting-label">累计投入金额（元）</div>
-        <input type="number" class="setting-input" id="setTotalInvested" placeholder="例如：50000">
-      </div>
-
-      <div class="setting-group">
-        <div class="setting-label">持仓成本（每份均价，元）</div>
-        <input type="number" class="setting-input" id="setAvgCost" placeholder="例如：1.2">
-      </div>
-
-      <div class="setting-group">
-        <div class="setting-label">当前持仓市值（元）</div>
-        <input type="number" class="setting-input" id="setCurrentValue" placeholder="例如：55000">
-      </div>
-
-      <div class="setting-group">
         <div class="setting-label">开始定投日期</div>
         <input type="date" class="setting-input" id="setStartDate">
       </div>
@@ -839,16 +824,6 @@
       <div class="setting-group">
         <div class="setting-label">总资产（元）</div>
         <input type="number" class="setting-input" id="setTotalAssets" value="650000">
-      </div>
-
-      <!-- 支付宝截图识别 -->
-      <div class="setting-group" style="border-top:1px solid var(--border);padding-top:16px;margin-top:16px;">
-        <div class="setting-label">📸 支付宝截图识别（自动提取仓位数据）</div>
-        <input type="file" class="setting-input" id="alipayScreenshot" accept="image/*" style="padding:8px;" onchange="handleAlipayScreenshot(this)">
-        <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">
-          上传支付宝基金持仓截图，自动识别累计投入、持仓成本、当前市值
-        </div>
-        <div id="ocrResult" style="display:none;margin-top:8px;padding:10px;background:rgba(34,197,94,0.1);border-radius:8px;font-size:12px;"></div>
       </div>
 
       <button class="settings-save" onclick="saveSettings()">💾 保存设置</button>

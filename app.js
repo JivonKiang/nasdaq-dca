@@ -25,9 +25,6 @@ const CONFIG = {
 
 // ===== 用户设置（预填默认值）=====
 let userSettings = {
-  totalInvested: 0,       // 累计投入（元），你记账时会自动累计
-  avgCost: 0,             // 持仓成本（每份均价），记账时自动计算
-  currentValue: 0,        // 当前持仓市值，记账时自动更新
   startDate: '',          // 开始定投日期，首次记账时自动记录
   totalAssets: 650000,    // 总资产65万
   weeklyBase: 1000,       // 周四定投基准1000元
@@ -419,18 +416,18 @@ function generateHistoricalPE(currentPE, closes) {
 
 // ===== PE档位判定 =====
 function getPEGrade(pe) {
-  if (pe <= 25) return { level: '加倍', amount: 2000, class: 'buy-double', color: 'green' };
-  if (pe <= 28) return { level: '1.5倍', amount: 1500, class: 'buy-normal', color: 'blue' };
-  if (pe <= 32) return { level: '正常', amount: 1000, class: 'buy-normal', color: 'blue' };
-  if (pe <= 35) return { level: '半额', amount: 500, class: 'buy-half', color: 'yellow' };
-  if (pe <= 40) return { level: '最低', amount: 300, class: 'buy-min', color: 'orange' };
-  return { level: '暂停', amount: 0, class: 'buy-zero', color: 'red' };
+  if (pe <= 25) return { level: '加倍', shares: 2, class: 'buy-double', color: 'green' };
+  if (pe <= 28) return { level: '1.5倍', shares: 1.5, class: 'buy-normal', color: 'blue' };
+  if (pe <= 32) return { level: '正常', shares: 1, class: 'buy-normal', color: 'blue' };
+  if (pe <= 35) return { level: '半额', shares: 0.5, class: 'buy-half', color: 'yellow' };
+  if (pe <= 40) return { level: '最低', shares: 0.3, class: 'buy-min', color: 'orange' };
+  return { level: '暂停', shares: 0, class: 'buy-zero', color: 'red' };
 }
 
 // ===== 加仓判定（三步法）=====
 function calculateAdditionalBuy(data) {
   if (!data.isTradingDay || data.isThursday) {
-    return { shouldAdd: false, amount: 0, reason: data.isThursday ? '周四禁止加仓' : '今日非交易日' };
+    return { shouldAdd: false, shares: 0, reason: data.isThursday ? '周四禁止加仓' : '今日非交易日' };
   }
 
   const change = data.ndx.change; // 前一交易日涨跌幅
@@ -439,24 +436,24 @@ function calculateAdditionalBuy(data) {
   const weeklyChange = data.ndx.weeklyChange;
 
   // 第一步：跌幅判定
-  let baseAmount = 0;
+  let baseShares = 0;
   let step1Reason = '';
   if (change >= 0 || change > -2) {
-    baseAmount = 0;
+    baseShares = 0;
     step1Reason = `前日涨跌幅${change >= 0 ? '+' : ''}${change.toFixed(2)}%，未触发加仓阈值`;
   } else if (change >= -4) {
-    baseAmount = 500;
-    step1Reason = `前日跌${change.toFixed(2)}%，触发500元档`;
+    baseShares = 0.5;
+    step1Reason = `前日跌${change.toFixed(2)}%，触发0.5份档`;
   } else if (change >= -7) {
-    baseAmount = 1000;
-    step1Reason = `前日跌${change.toFixed(2)}%，触发1000元档`;
+    baseShares = 1;
+    step1Reason = `前日跌${change.toFixed(2)}%，触发1份档`;
   } else {
-    baseAmount = 1000;
-    step1Reason = `前日跌${change.toFixed(2)}%，触发1000元档+极端超跌`;
+    baseShares = 1;
+    step1Reason = `前日跌${change.toFixed(2)}%，触发1份档+极端超跌`;
   }
 
-  if (baseAmount === 0) {
-    return { shouldAdd: false, amount: 0, reason: step1Reason, step1: step1Reason };
+  if (baseShares === 0) {
+    return { shouldAdd: false, shares: 0, reason: step1Reason, step1: step1Reason };
   }
 
   // 第二步：估值修正
@@ -473,7 +470,7 @@ function calculateAdditionalBuy(data) {
     step2Reason = `PE=${pe.toFixed(1)}在32-35，估值修正×0.8`;
   }
 
-  let adjustedAmount = Math.round(baseAmount * multiplier);
+  let adjustedShares = Math.round(baseShares * multiplier * 10) / 10;
 
   // 第三步：事件降档
   let eventDowngrade = false;
@@ -514,7 +511,7 @@ function calculateAdditionalBuy(data) {
   if (skipToday) {
     return {
       shouldAdd: false,
-      amount: 0,
+      shares: 0,
       reason: eventReason,
       step1: step1Reason,
       step2: step2Reason,
@@ -524,12 +521,12 @@ function calculateAdditionalBuy(data) {
   }
 
   if (eventDowngrade) {
-    if (adjustedAmount >= 1000) adjustedAmount = 500;
-    else if (adjustedAmount >= 500) adjustedAmount = 0;
+    if (adjustedShares >= 1) adjustedShares = 0.5;
+    else if (adjustedShares >= 0.5) adjustedShares = 0;
   }
 
-  // 周度累计加仓上限检查（本周周一到当前日已加仓总额 >= 1000元则当日不再加仓）
-  if (adjustedAmount > 0) {
+  // 周度累计加仓上限检查（本周周一到当前日已加仓总额 >= 1份则当日不再加仓）
+  if (adjustedShares > 0) {
     const history = getInvestHistory();
     const today = new Date(data.nyTime);
     const dayOfWeek = today.getDay();
@@ -539,38 +536,38 @@ function calculateAdditionalBuy(data) {
     monday.setDate(today.getDate() + mondayOffset);
     monday.setHours(0, 0, 0, 0);
     const mondayStr = formatDateStr(monday);
-    // 统计本周额外加仓总额（排除周四定投）
+    // 统计本周额外加仓总额（排除周四定投），转换为份数
     const weeklyAddTotal = history
       .filter(h => h.date >= mondayStr && h.type === '额外加仓')
-      .reduce((sum, h) => sum + h.amount, 0);
-    if (weeklyAddTotal >= 1000) {
+      .reduce((sum, h) => sum + h.amount, 0) / 1000;
+    if (weeklyAddTotal >= 1) {
       return {
         shouldAdd: false,
-        amount: 0,
-        reason: step1Reason + '；' + step2Reason + '；本周已加仓' + weeklyAddTotal + '元，达周度上限1000元',
+        shares: 0,
+        reason: step1Reason + '；' + step2Reason + '；本周已加仓' + weeklyAddTotal.toFixed(1) + '份，达周度上限1份',
         step1: step1Reason,
         step2: step2Reason,
-        step3: '周度加仓上限已满（本周已加仓' + weeklyAddTotal + '元）',
+        step3: '周度加仓上限已满（本周已加仓' + weeklyAddTotal.toFixed(1) + '份）',
       };
     }
   }
 
   // 连续加仓检测
-  if (adjustedAmount > 0) {
+  if (adjustedShares > 0) {
     consecutiveAddDays++;
     if (consecutiveAddDays >= 3) {
-      // 连续3日加仓，强制降一档：1000→500, 500→0
-      let downgradedAmount = adjustedAmount;
-      if (adjustedAmount >= 1000) downgradedAmount = 500;
-      else if (adjustedAmount >= 500) downgradedAmount = 0;
+      // 连续3日加仓，强制降一档：1→0.5, 0.5→0
+      let downgradedShares = adjustedShares;
+      if (adjustedShares >= 1) downgradedShares = 0.5;
+      else if (adjustedShares >= 0.5) downgradedShares = 0;
       return {
-        shouldAdd: downgradedAmount > 0,
-        amount: downgradedAmount,
+        shouldAdd: downgradedShares > 0,
+        shares: downgradedShares,
         reason: step1Reason + '；' + step2Reason + '；' + eventReason,
         step1: step1Reason,
         step2: step2Reason,
         step3: eventReason,
-        warning: `连续${consecutiveAddDays}日加仓，强制降一档（${adjustedAmount}→${downgradedAmount}元）`,
+        warning: `连续${consecutiveAddDays}日加仓，强制降一档（${adjustedShares}→${downgradedShares}份）`,
       };
     }
   } else {
@@ -578,8 +575,8 @@ function calculateAdditionalBuy(data) {
   }
 
   return {
-    shouldAdd: adjustedAmount > 0,
-    amount: adjustedAmount,
+    shouldAdd: adjustedShares > 0,
+    shares: adjustedShares,
     reason: step1Reason + '；' + step2Reason + '；' + eventReason,
     step1: step1Reason,
     step2: step2Reason,
@@ -689,8 +686,8 @@ function analyzeTrend(data) {
 function generateDataPersuasion(data) {
   const pe = data.pe;
   const totalAssets = userSettings.totalAssets;
-  const weeklyAmount = data.peGrade.amount;
-  const weeklyRatio = ((weeklyAmount / totalAssets) * 100).toFixed(4);
+  const weeklyShares = data.peGrade.shares;
+  const weeklyRatio = ((weeklyShares * userSettings.weeklyBase / totalAssets) * 100).toFixed(4);
 
   // 历史定投收益概率（基于PE起点）
   let prob12m = '70%';
@@ -714,32 +711,27 @@ function generateDataPersuasion(data) {
     maxDrawdownPct = '25%';
   }
 
-  // 如果用户没有设置投入数据，用定投记录自动计算
-  const totalInvested = userSettings.totalInvested > 0
-    ? userSettings.totalInvested
-    : getHistoryTotalInvested();
-
-  const maxLoss = totalInvested > 0
-    ? Math.round(totalInvested * parseFloat(maxDrawdownPct) / 100)
-    : 0;
-  const lossRatio = maxLoss > 0
-    ? ((maxLoss / totalAssets) * 100).toFixed(2)
+  // 从定投记录计算累计份数
+  const totalInvestedAmount = getHistoryTotalInvested();
+  const totalShares = totalInvestedAmount / 1000;
+  const investedRatio = totalInvestedAmount > 0
+    ? ((totalInvestedAmount / totalAssets) * 100).toFixed(2)
     : '0.00';
 
   return {
     weeklyRatio,
     prob12m,
     maxDrawdownPct,
-    maxLoss,
-    lossRatio,
+    lossRatio: maxDrawdownPct,
     startPE: pe.toFixed(1),
-    totalInvested,
+    totalShares,
+    investedRatio,
   };
 }
 
 // 从定投记录计算累计投入
 function getHistoryTotalInvested() {
-  const history = getHistory();
+  const history = getInvestHistory();
   return history.reduce((sum, h) => sum + h.amount, 0);
 }
 
@@ -824,6 +816,7 @@ function renderTodayTab(data) {
         纳指长期PE中枢约25-28倍。
         你每周定投占${(userSettings.totalAssets / 10000).toFixed(0)}万总资产仅<span class="${grade.color}" style="font-weight:700">${persuasion.weeklyRatio}%</span>，
         即便全亏也不影响生活。
+        ${persuasion.totalShares > 0 ? `你当前定投占总资产的<span class="${grade.color}" style="font-weight:700">${persuasion.investedRatio}%</span>，累计${persuasion.totalShares.toFixed(1)}份。` : ''}
         <strong style="color:var(--text-primary)">浮亏是假的，份额是真的。</strong>
       </div>
     </div>
@@ -880,7 +873,7 @@ function renderTodayTab(data) {
 
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
         <span style="font-size:13px;">✅ 周四定投</span>
-        <span class="${grade.color}" style="font-weight:700;font-size:15px;">${grade.amount}元</span>
+        <span class="${grade.color}" style="font-weight:700;font-size:15px;">${grade.shares}份</span>
       </div>
       <div style="font-size:12px;color:var(--text-muted);margin-bottom:12px;">
         PE=${pe.toFixed(1)} → ${grade.level}档
@@ -890,7 +883,7 @@ function renderTodayTab(data) {
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
           <span style="font-size:13px;">✅ 额外加仓</span>
           <span style="font-weight:700;font-size:15px;" class="${addResult.shouldAdd ? 'green' : 'muted'}">
-            ${addResult.shouldAdd ? `加仓${addResult.amount}元` : '不加仓'}
+            ${addResult.shouldAdd ? `加仓${addResult.shares}份` : '不加仓'}
           </span>
         </div>
         ${addResult.reason ? `<div class="action-reason">${addResult.reason}</div>` : ''}
@@ -899,9 +892,9 @@ function renderTodayTab(data) {
 
       <div style="border-top:1px solid var(--border);padding-top:10px;margin-top:10px;">
         <div style="display:flex;justify-content:space-between;font-size:13px;">
-          <span>📊 今日总操作金额</span>
+          <span>📊 今日操作：基准1份</span>
           <span class="${grade.color}" style="font-weight:800;font-size:18px;">
-            ${grade.amount + (addResult.shouldAdd ? addResult.amount : 0)}元
+            ${grade.shares + (addResult.shouldAdd ? addResult.shares : 0)}份
           </span>
         </div>
       </div>
@@ -927,7 +920,7 @@ function renderTodayTab(data) {
         ${trend.advice}
       </div>
       <div style="font-size:12px;color:var(--text-muted);margin-top:8px;line-height:1.6;">
-        若PE下行至28→恢复1000元正常档；若PE突破35→降至300元最低档。
+        若PE下行至28→恢复1份正常档；若PE突破35→降至0.3份最低档。
       </div>
     </div>
 
@@ -935,10 +928,9 @@ function renderTodayTab(data) {
     <div class="card quote-card">
       <div class="card-title" style="justify-content:center"><span class="emoji">📊</span>数据说服</div>
       <div class="quote-text">
-        你当前累计投入约${persuasion.totalInvested > 0 ? (persuasion.totalInvested / 10000).toFixed(1) + '万' : '0'}元，
-        ${userSettings.avgCost > 0 ? '持仓成本约' + userSettings.avgCost.toFixed(4) + '。' : ''}
+        你当前定投占总资产的<span class="${grade.color}" style="font-weight:700">${persuasion.investedRatio}%</span>，
         历史上PE从${persuasion.startPE}倍开始定投，持有12个月正收益概率约${persuasion.prob12m}。
-        最可能情景下最大浮亏约${persuasion.maxLoss > 0 ? (persuasion.maxLoss / 10000).toFixed(1) + '万' : '0'}元（占总资产${persuasion.lossRatio}%）。
+        最可能情景下最大浮亏约占总资产${persuasion.lossRatio}%。
       </div>
       <div class="quote-text" style="font-size:14px;margin-top:8px;">
         市场恐惧时坚持买入，是定投策略超额收益的来源。<br>
@@ -1093,27 +1085,31 @@ function renderMidTermTab(data) {
     <div class="card">
       <div class="card-title"><span class="emoji">📐</span>定投成本分析</div>
       <div style="font-size:14px;line-height:1.8;color:var(--text-secondary)">
-        ${userSettings.totalInvested > 0 ? `
-          <div class="data-grid">
-            <div class="data-item">
-              <div class="data-label">累计投入</div>
-              <div class="data-value">${(userSettings.totalInvested / 10000).toFixed(2)}万</div>
-            </div>
-            <div class="data-item">
-              <div class="data-label">当前市值</div>
-              <div class="data-value ${userSettings.currentValue >= userSettings.totalInvested ? 'green' : 'red'}">
-                ${(userSettings.currentValue / 10000).toFixed(2)}万
+        ${(() => {
+          const history = getInvestHistory();
+          const totalInvested = history.reduce((sum, h) => sum + h.amount, 0);
+          const totalShares = totalInvested / 1000;
+          if (totalShares > 0) {
+            const investedRatio = ((totalInvested / userSettings.totalAssets) * 100).toFixed(2);
+            return `
+              <div class="data-grid">
+                <div class="data-item">
+                  <div class="data-label">累计投入</div>
+                  <div class="data-value">${totalShares.toFixed(1)}份</div>
+                </div>
+                <div class="data-item">
+                  <div class="data-label">占总资产比</div>
+                  <div class="data-value blue">${investedRatio}%</div>
+                </div>
+                <div class="data-item">
+                  <div class="data-label">操作次数</div>
+                  <div class="data-value">${history.length}次</div>
+                </div>
               </div>
-            </div>
-            <div class="data-item full">
-              <div class="data-label">累计盈亏</div>
-              <div class="data-value ${userSettings.currentValue - userSettings.totalInvested >= 0 ? 'green' : 'red'}">
-                ${((userSettings.currentValue - userSettings.totalInvested) / 10000).toFixed(2)}万
-                (${((userSettings.currentValue - userSettings.totalInvested) / userSettings.totalInvested * 100).toFixed(1)}%)
-              </div>
-            </div>
-          </div>
-        ` : '请先在设置中填写你的定投数据，以便进行成本分析。'}
+            `;
+          }
+          return '暂无定投记录，开始定投后可查看成本分析。';
+        })()}
       </div>
     </div>
   `;
@@ -1161,10 +1157,10 @@ function renderLongTermTab(data) {
     <div class="card">
       <div class="card-title"><span class="emoji">📜</span>定投铁律回顾</div>
       <div style="font-size:13px;line-height:2;color:var(--text-secondary)">
-        <div>1️⃣ 周四定投基准1000元，按PE档位自动调整</div>
-        <div>2️⃣ 加仓仅限周一/二/三/五，单日封顶1000元</div>
+        <div>1️⃣ 周四定投基准1份，按PE档位自动调整</div>
+        <div>2️⃣ 加仓仅限周一/二/三/五，单日封顶1份</div>
         <div>3️⃣ PE<25加倍 | 25-28为1.5倍 | 28-32正常 | 32-35半额 | 35-40最低 | >40暂停</div>
-        <div>4️⃣ 跌2-4%加仓500元 | 跌≥4%加仓1000元 | 跌≥7%极端超跌</div>
+        <div>4️⃣ 跌2-4%加仓0.5份 | 跌≥4%加仓1份 | 跌≥7%极端超跌</div>
         <div>5️⃣ 一级事件前1日、VIX>30+周跌>5%、年末季末 → 降一档</div>
         <div>6️⃣ 每周定投占总资产仅${persuasion.weeklyRatio}%，执行它，关掉软件</div>
       </div>
@@ -1199,6 +1195,7 @@ function renderHistoryTab() {
   }
 
   const totalInvested = history.reduce((sum, h) => sum + h.amount, 0);
+  const totalShares = totalInvested / 1000;
 
   tab.innerHTML = `
     <div class="card">
@@ -1206,7 +1203,7 @@ function renderHistoryTab() {
       <div class="data-grid" style="margin-bottom:12px;">
         <div class="data-item">
           <div class="data-label">累计投入</div>
-          <div class="data-value">${(totalInvested / 10000).toFixed(2)}万</div>
+          <div class="data-value">${totalShares.toFixed(1)}份</div>
         </div>
         <div class="data-item">
           <div class="data-label">操作次数</div>
@@ -1217,7 +1214,7 @@ function renderHistoryTab() {
         <div class="history-item">
           <span class="history-date">${h.date}</span>
           <span class="history-action">${h.type}</span>
-          <span class="history-amount ${h.amount > 0 ? 'green' : 'muted'}">${h.amount > 0 ? '+' : ''}${h.amount}元</span>
+          <span class="history-amount ${h.amount > 0 ? 'green' : 'muted'}">${h.amount > 0 ? '+' : ''}${(h.amount / 1000).toFixed(1)}份</span>
         </div>
       `).join('')}
     </div>
@@ -1234,10 +1231,10 @@ function generateShortTermAdvice(data, addResult, trend) {
 
   // 今日操作
   if (data.isThursday) {
-    parts.push(`<strong class="${data.peGrade.color}">今天是定投日，执行${data.peGrade.amount}元定投。</strong>`);
+    parts.push(`<strong class="${data.peGrade.color}">今天是定投日，执行${data.peGrade.shares}份定投。</strong>`);
   } else if (data.isTradingDay) {
     if (addResult.shouldAdd) {
-      parts.push(`<strong class="green">今日可加仓${addResult.amount}元。</strong>原因：${addResult.step1}`);
+      parts.push(`<strong class="green">今日可加仓${addResult.shares}份。</strong>原因：${addResult.step1}`);
     } else {
       parts.push(`<strong class="muted">今日不加仓。</strong>${addResult.reason || ''}`);
     }
@@ -1283,11 +1280,11 @@ function generateMidTermAdvice(data, volatility, peTrend) {
 
   // 中期建议
   if (data.pe > 35) {
-    parts.push('当前PE偏高，中期建议维持最低档定投（300元），不额外加仓。等待估值回归后再加大投入。');
+    parts.push('当前PE偏高，中期建议维持最低档定投（0.3份），不额外加仓。等待估值回归后再加大投入。');
   } else if (data.pe < 25) {
-    parts.push('当前PE处于低估区间，中期建议加倍定投（2000元），积极收集廉价份额。这是超额收益的来源。');
+    parts.push('当前PE处于低估区间，中期建议加倍定投（2份），积极收集廉价份额。这是超额收益的来源。');
   } else {
-    parts.push('当前PE处于合理区间，中期建议按正常档位（1000元）定投，保持节奏。');
+    parts.push('当前PE处于合理区间，中期建议按正常档位（1份）定投，保持节奏。');
   }
 
   return parts.join('<br><br>');
@@ -1439,17 +1436,11 @@ function loadSettings() {
   }
 
   // 填充设置表单
-  document.getElementById('setTotalInvested').value = userSettings.totalInvested || '';
-  document.getElementById('setAvgCost').value = userSettings.avgCost || '';
-  document.getElementById('setCurrentValue').value = userSettings.currentValue || '';
   document.getElementById('setStartDate').value = userSettings.startDate || '';
   document.getElementById('setTotalAssets').value = userSettings.totalAssets || 650000;
 }
 
 function saveSettings() {
-  userSettings.totalInvested = parseFloat(document.getElementById('setTotalInvested').value) || 0;
-  userSettings.avgCost = parseFloat(document.getElementById('setAvgCost').value) || 0;
-  userSettings.currentValue = parseFloat(document.getElementById('setCurrentValue').value) || 0;
   userSettings.startDate = document.getElementById('setStartDate').value;
   userSettings.totalAssets = parseFloat(document.getElementById('setTotalAssets').value) || 650000;
 
@@ -1498,23 +1489,23 @@ function recordTodayInvest(data) {
 
   const records = [];
 
-  // 周四定投记录
-  if (data.isThursday && grade.amount > 0) {
+  // 周四定投记录（amount保留为内部金额，用于计算）
+  if (data.isThursday && grade.shares > 0) {
     records.push({
       date: today,
       type: '周四定投',
-      amount: grade.amount,
+      amount: grade.shares * userSettings.weeklyBase,
       pe: data.pe,
       ndx: data.ndx.price,
     });
   }
 
   // 加仓记录
-  if (addResult.shouldAdd && addResult.amount > 0) {
+  if (addResult.shouldAdd && addResult.shares > 0) {
     records.push({
       date: today,
       type: '额外加仓',
-      amount: addResult.amount,
+      amount: addResult.shares * userSettings.weeklyBase,
       pe: data.pe,
       ndx: data.ndx.price,
     });
@@ -1531,176 +1522,6 @@ function clearHistory() {
     localStorage.removeItem('nasdaq_dca_history');
     renderHistoryTab();
   }
-}
-
-// ===== 支付宝截图识别 =====
-
-function handleAlipayScreenshot(input) {
-  const file = input.files[0];
-  if (!file) return;
-
-  const ocrResult = document.getElementById('ocrResult');
-  ocrResult.style.display = 'block';
-  ocrResult.innerHTML = '🔍 正在识别截图...';
-
-  const reader = new FileReader();
-  reader.onload = function(e) {
-    const img = new Image();
-    img.onload = function() {
-      // 使用Tesseract.js进行OCR识别
-      recognizeAlipayScreenshot(img, ocrResult);
-    };
-    img.src = e.target.result;
-  };
-  reader.readAsDataURL(file);
-}
-
-async function recognizeAlipayScreenshot(img, resultDiv) {
-  try {
-    // 动态加载Tesseract.js
-    if (!window.Tesseract) {
-      resultDiv.innerHTML = '📥 正在加载OCR引擎...';
-      await loadScript('https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js');
-    }
-
-    resultDiv.innerHTML = '🔍 正在识别文字...';
-
-    const { data: { text } } = await Tesseract.recognize(img, 'chi_sim+eng', {
-      logger: m => {
-        if (m.status === 'recognizing text') {
-          resultDiv.innerHTML = `🔍 识别中... ${Math.round(m.progress * 100)}%`;
-        }
-      }
-    });
-
-    // 解析关键数据
-    const extracted = parseAlipayOCR(text);
-
-    if (extracted.found) {
-      // 自动填入设置
-      if (extracted.totalInvested) {
-        document.getElementById('setTotalInvested').value = extracted.totalInvested;
-        userSettings.totalInvested = extracted.totalInvested;
-      }
-      if (extracted.avgCost) {
-        document.getElementById('setAvgCost').value = extracted.avgCost;
-        userSettings.avgCost = extracted.avgCost;
-      }
-      if (extracted.currentValue) {
-        document.getElementById('setCurrentValue').value = extracted.currentValue;
-        userSettings.currentValue = extracted.currentValue;
-      }
-      saveSettings();
-
-      resultDiv.innerHTML = `
-        <div style="color:var(--accent-green);font-weight:700;">✅ 识别成功！已自动填入</div>
-        <div style="margin-top:6px;line-height:1.6;">
-          ${extracted.totalInvested ? `累计投入: ${(extracted.totalInvested/10000).toFixed(2)}万<br>` : ''}
-          ${extracted.avgCost ? `持仓成本: ${extracted.avgCost.toFixed(4)}<br>` : ''}
-          ${extracted.currentValue ? `当前市值: ${(extracted.currentValue/10000).toFixed(2)}万<br>` : ''}
-          ${extracted.profit ? `盈亏: ${extracted.profit >= 0 ? '+' : ''}${extracted.profit.toFixed(2)}%` : ''}
-        </div>
-      `;
-    } else {
-      resultDiv.innerHTML = `
-        <div style="color:var(--accent-yellow);">⚠️ 未能识别关键数据</div>
-        <div style="margin-top:4px;font-size:11px;color:var(--text-muted);">
-          识别到的文字:<br>${text.substring(0, 200)}...
-        </div>
-        <div style="margin-top:6px;">
-          请确保截图包含：累计投入、持仓成本、当前市值等数据
-        </div>
-      `;
-    }
-  } catch (err) {
-    resultDiv.innerHTML = `<div style="color:var(--accent-red);">❌ 识别失败: ${err.message}</div>`;
-  }
-}
-
-// 解析支付宝OCR文本
-function parseAlipayOCR(text) {
-  const result = { found: false };
-
-  // 累计投入/累计金额
-  const totalPatterns = [
-    /累计投入[：:]?\s*([\d,\.]+)/,
-    /累计金额[：:]?\s*([\d,\.]+)/,
-    /投入金额[：:]?\s*([\d,\.]+)/,
-    /持仓成本[：:]?\s*([\d,\.]+)/,
-    /成本[：:]?\s*([\d,\.]+)/,
-  ];
-
-  for (const pattern of totalPatterns) {
-    const match = text.match(pattern);
-    if (match) {
-      const val = parseFloat(match[1].replace(/,/g, ''));
-      if (val > 1000) {
-        result.totalInvested = val;
-        result.found = true;
-        break;
-      }
-    }
-  }
-
-  // 持仓成本（每份）
-  const costPatterns = [
-    /持仓成本[：:]?\s*([\d,\.]+)/,
-    /成本价[：:]?\s*([\d,\.]+)/,
-    /单价[：:]?\s*([\d,\.]+)/,
-    /净值[：:]?\s*([\d,\.]+)/,
-  ];
-
-  for (const pattern of costPatterns) {
-    const match = text.match(pattern);
-    if (match) {
-      const val = parseFloat(match[1].replace(/,/g, ''));
-      if (val > 0.1 && val < 100) {
-        result.avgCost = val;
-        result.found = true;
-        break;
-      }
-    }
-  }
-
-  // 当前市值/最新市值
-  const valuePatterns = [
-    /当前市值[：:]?\s*([\d,\.]+)/,
-    /最新市值[：:]?\s*([\d,\.]+)/,
-    /市值[：:]?\s*([\d,\.]+)/,
-    /金额[：:]?\s*([\d,\.]+)/,
-    /资产[：:]?\s*([\d,\.]+)/,
-  ];
-
-  for (const pattern of valuePatterns) {
-    const match = text.match(pattern);
-    if (match) {
-      const val = parseFloat(match[1].replace(/,/g, ''));
-      if (val > 1000) {
-        result.currentValue = val;
-        result.found = true;
-        break;
-      }
-    }
-  }
-
-  // 盈亏百分比
-  const profitMatch = text.match(/([+-]?[\d\.]+)%/);
-  if (profitMatch) {
-    result.profit = parseFloat(profitMatch[1]);
-  }
-
-  return result;
-}
-
-// 动态加载外部脚本
-function loadScript(src) {
-  return new Promise((resolve, reject) => {
-    const script = document.createElement('script');
-    script.src = src;
-    script.onload = resolve;
-    script.onerror = reject;
-    document.head.appendChild(script);
-  });
 }
 
 // ===== 数据缓存 =====
