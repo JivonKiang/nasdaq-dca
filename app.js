@@ -97,7 +97,7 @@ async function fetchGitHubCache() {
     const data = await response.json();
     // 检查数据是否过期（超过2小时视为过期，但仍显示）
     const age = Date.now() - new Date(data.updatedAt || data.timestamp).getTime();
-    if (age > 24 * 60 * 60 * 1000) return null; // 超过24小时不用
+    if (age > 7 * 24 * 60 * 60 * 1000) return null; // 超过7天不用（非交易时段缓存保留更久）
     // 解析nyTime为Date对象
     if (typeof data.nyTime === 'string') {
       data.nyTime = new Date(data.nyTime);
@@ -371,11 +371,20 @@ async function fetchAllMarketData() {
 // ===== PE估算函数 =====
 function estimatePE(price) {
   // 基于已知数据点进行线性插值估算
-  // 数据点：(价格, PE) - 基于近期市场数据
+  // 数据点：(价格, PE) - 覆盖2020-2025年关键价格-PE对应关系
   const knownPoints = [
-    [18000, 28], [19000, 29], [20000, 30], [21000, 31],
-    [22000, 32], [23000, 33], [24000, 34], [25000, 35],
-    [20000, 30], [17000, 26], [16000, 25],
+    [7500, 22.5],   // 2020-03
+    [11000, 30.2],  // 2020-09
+    [13000, 32.5],  // 2021-01
+    [14500, 28.8],  // 2021-07
+    [15000, 25.5],  // 2022-01
+    [10500, 20.8],  // 2022-10
+    [10500, 23.5],  // 2023-01
+    [15500, 29.0],  // 2023-07
+    [17000, 28.5],  // 2024-01
+    [19000, 30.5],  // 2024-07
+    [21000, 33.0],  // 2025-01
+    [22000, 34.5],  // 2025-06
   ];
 
   if (!price) return 30; // 默认值
@@ -410,7 +419,7 @@ function generateHistoricalPE(currentPE, closes) {
 
 // ===== PE档位判定 =====
 function getPEGrade(pe) {
-  if (pe < 25) return { level: '加倍', amount: 2000, class: 'buy-double', color: 'green' };
+  if (pe <= 25) return { level: '加倍', amount: 2000, class: 'buy-double', color: 'green' };
   if (pe <= 28) return { level: '1.5倍', amount: 1500, class: 'buy-normal', color: 'blue' };
   if (pe <= 32) return { level: '正常', amount: 1000, class: 'buy-normal', color: 'blue' };
   if (pe <= 35) return { level: '半额', amount: 500, class: 'buy-half', color: 'yellow' };
@@ -519,18 +528,49 @@ function calculateAdditionalBuy(data) {
     else if (adjustedAmount >= 500) adjustedAmount = 0;
   }
 
+  // 周度累计加仓上限检查（本周周一到当前日已加仓总额 >= 1000元则当日不再加仓）
+  if (adjustedAmount > 0) {
+    const history = getInvestHistory();
+    const today = new Date(data.nyTime);
+    const dayOfWeek = today.getDay();
+    // 计算本周一的日期
+    const mondayOffset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+    const monday = new Date(today);
+    monday.setDate(today.getDate() + mondayOffset);
+    monday.setHours(0, 0, 0, 0);
+    const mondayStr = formatDateStr(monday);
+    // 统计本周额外加仓总额（排除周四定投）
+    const weeklyAddTotal = history
+      .filter(h => h.date >= mondayStr && h.type === '额外加仓')
+      .reduce((sum, h) => sum + h.amount, 0);
+    if (weeklyAddTotal >= 1000) {
+      return {
+        shouldAdd: false,
+        amount: 0,
+        reason: step1Reason + '；' + step2Reason + '；本周已加仓' + weeklyAddTotal + '元，达周度上限1000元',
+        step1: step1Reason,
+        step2: step2Reason,
+        step3: '周度加仓上限已满（本周已加仓' + weeklyAddTotal + '元）',
+      };
+    }
+  }
+
   // 连续加仓检测
   if (adjustedAmount > 0) {
     consecutiveAddDays++;
     if (consecutiveAddDays >= 3) {
+      // 连续3日加仓，强制降一档：1000→500, 500→0
+      let downgradedAmount = adjustedAmount;
+      if (adjustedAmount >= 1000) downgradedAmount = 500;
+      else if (adjustedAmount >= 500) downgradedAmount = 0;
       return {
-        shouldAdd: true,
-        amount: adjustedAmount,
+        shouldAdd: downgradedAmount > 0,
+        amount: downgradedAmount,
         reason: step1Reason + '；' + step2Reason + '；' + eventReason,
         step1: step1Reason,
         step2: step2Reason,
         step3: eventReason,
-        warning: '短期超跌区间，严守标准不随意加码',
+        warning: `连续${consecutiveAddDays}日加仓，强制降一档（${adjustedAmount}→${downgradedAmount}元）`,
       };
     }
   } else {

@@ -48,14 +48,20 @@ function fetchChartData(symbol, range = '1mo', interval = '1d') {
 // ===== PE估算 =====
 function estimatePE(price) {
   // 基于已知数据点建立价格-PE映射
-  // 数据来源：Siblis Research + Yahoo Finance
+  // 数据来源：Siblis Research + Yahoo Finance，覆盖2020-2025年关键价格-PE对应关系
   const knownPoints = [
-    { price: 15000, pe: 25.5, date: '2023-01' },
-    { price: 16500, pe: 27.0, date: '2023-06' },
-    { price: 18000, pe: 29.5, date: '2024-01' },
-    { price: 20000, pe: 31.0, date: '2024-06' },
-    { price: 21000, pe: 33.0, date: '2024-12' },
-    { price: 22500, pe: 35.5, date: '2025-06' },
+    { price: 7500,  pe: 22.5, date: '2020-03' },
+    { price: 11000, pe: 30.2, date: '2020-09' },
+    { price: 13000, pe: 32.5, date: '2021-01' },
+    { price: 14500, pe: 28.8, date: '2021-07' },
+    { price: 15000, pe: 25.5, date: '2022-01' },
+    { price: 10500, pe: 20.8, date: '2022-10' },
+    { price: 10500, pe: 23.5, date: '2023-01' },
+    { price: 15500, pe: 29.0, date: '2023-07' },
+    { price: 17000, pe: 28.5, date: '2024-01' },
+    { price: 19000, pe: 30.5, date: '2024-07' },
+    { price: 21000, pe: 33.0, date: '2025-01' },
+    { price: 22000, pe: 34.5, date: '2025-06' },
   ];
 
   if (price <= knownPoints[0].price) return knownPoints[0].pe;
@@ -76,11 +82,11 @@ function estimatePE(price) {
 }
 
 function getPEGrade(pe) {
-  if (pe < 25) return { name: '加倍', amount: 2000, color: 'green', cls: 'buy-double' };
-  if (pe < 28) return { name: '1.5倍', amount: 1500, color: 'blue', cls: 'buy-normal' };
-  if (pe < 32) return { name: '正常', amount: 1000, color: 'blue', cls: 'buy-normal' };
-  if (pe < 35) return { name: '半额', amount: 500, color: 'yellow', cls: 'buy-half' };
-  if (pe < 40) return { name: '最低', amount: 300, color: 'orange', cls: 'buy-min' };
+  if (pe <= 25) return { name: '加倍', amount: 2000, color: 'green', cls: 'buy-double' };
+  if (pe <= 28) return { name: '1.5倍', amount: 1500, color: 'blue', cls: 'buy-normal' };
+  if (pe <= 32) return { name: '正常', amount: 1000, color: 'blue', cls: 'buy-normal' };
+  if (pe <= 35) return { name: '半额', amount: 500, color: 'yellow', cls: 'buy-half' };
+  if (pe <= 40) return { name: '最低', amount: 300, color: 'orange', cls: 'buy-min' };
   return { name: '暂停', amount: 0, color: 'red', cls: 'buy-zero' };
 }
 
