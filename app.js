@@ -21,13 +21,15 @@ const CONFIG = {
   USE_MOCK: false, // 强制使用模拟数据（调试用）
 };
 
-// ===== 用户设置 =====
+// ===== 用户设置（预填默认值）=====
 let userSettings = {
-  totalInvested: 0,
-  avgCost: 0,
-  currentValue: 0,
-  startDate: '',
-  totalAssets: 650000,
+  totalInvested: 0,       // 累计投入（元），你记账时会自动累计
+  avgCost: 0,             // 持仓成本（每份均价），记账时自动计算
+  currentValue: 0,        // 当前持仓市值，记账时自动更新
+  startDate: '',          // 开始定投日期，首次记账时自动记录
+  totalAssets: 650000,    // 总资产65万
+  weeklyBase: 1000,       // 周四定投基准1000元
+  holdings: 16,           // 15支纳指100 + 1支标普500 = 16支
 };
 
 // ===== 全局状态 =====
@@ -39,19 +41,76 @@ let consecutiveAddDays = 0; // 连续加仓天数
 // ===== 初始化 =====
 document.addEventListener('DOMContentLoaded', () => {
   loadSettings();
-  refreshData();
+
+  // 速度优化：先立即显示缓存数据，再后台刷新
+  const cached = loadCachedData();
+  if (cached) {
+    marketData = cached;
+    renderAllTabs(cached);
+    updateHeaderStatus(cached);
+    document.getElementById('loadingState').style.display = 'none';
+    // 后台静默刷新
+    fetchAllMarketData().then(fresh => {
+      if (fresh && !fresh._mock) {
+        marketData = fresh;
+        renderAllTabs(fresh);
+        updateHeaderStatus(fresh);
+      }
+    }).catch(() => {});
+  } else {
+    refreshData();
+  }
 });
+
+// 渲染所有Tab的统一入口
+function renderAllTabs(data) {
+  const activeTab = document.querySelector('.tab-content.active');
+  if (!activeTab) {
+    document.getElementById('tab-today').classList.add('active');
+  }
+  renderTodayTab(data);
+  renderShortTermTab(data);
+  renderMidTermTab(data);
+  renderLongTermTab(data);
+  renderHistoryTab();
+}
+
+// 更新头部状态
+function updateHeaderStatus(data) {
+  const statusBadge = document.getElementById('statusBadge');
+  const statusText = document.getElementById('statusText');
+  const headerTime = document.getElementById('headerTime');
+
+  if (data._mock) {
+    statusBadge.className = 'status-badge loading';
+    statusText.textContent = '演示数据';
+  } else if (data._stale) {
+    statusBadge.className = 'status-badge loading';
+    statusText.textContent = '缓存数据';
+  } else {
+    statusBadge.className = 'status-badge live';
+    statusText.textContent = '实时';
+  }
+
+  const nyTime = data.nyTime;
+  const dataSource = data._mock ? ' [演示模式]' : data._stale ? ' [缓存模式]' : '';
+  headerTime.textContent = `美东时间 ${formatTime(nyTime)} ${getDayName(nyTime.getDay())} | 更新于 ${formatTime(new Date())}${dataSource}`;
+}
 
 // ===== 数据获取层 =====
 
-async function fetchViaProxy(url) {
-  // 尝试所有代理
+async function fetchViaProxy(url, timeoutMs = 6000) {
+  // 尝试所有代理，每个有独立超时
   for (let i = 0; i < CONFIG.CORS_PROXIES.length; i++) {
     const proxyUrl = CONFIG.CORS_PROXIES[(currentProxyIndex + i) % CONFIG.CORS_PROXIES.length] + encodeURIComponent(url);
     try {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), timeoutMs);
       const response = await fetch(proxyUrl, {
-        headers: { 'Accept': 'application/json' }
+        headers: { 'Accept': 'application/json' },
+        signal: controller.signal
       });
+      clearTimeout(timer);
       if (response.ok) {
         currentProxyIndex = (currentProxyIndex + i) % CONFIG.CORS_PROXIES.length;
         return await response.json();
@@ -1221,52 +1280,22 @@ async function refreshData() {
   const loading = document.getElementById('loadingState');
   const error = document.getElementById('errorState');
   const refreshBtn = document.getElementById('refreshBtn');
-  const statusBadge = document.getElementById('statusBadge');
-  const statusText = document.getElementById('statusText');
 
   // 显示加载状态
   loading.style.display = 'flex';
   error.style.display = 'none';
   refreshBtn.classList.add('spinning');
-  statusBadge.className = 'status-badge loading';
-  statusText.textContent = '加载中';
 
   try {
     const data = await fetchAllMarketData();
-
-    // 更新状态
-    if (data._mock) {
-      statusBadge.className = 'status-badge loading';
-      statusText.textContent = '演示数据';
-    } else if (data._stale) {
-      statusBadge.className = 'status-badge loading';
-      statusText.textContent = '缓存数据';
-    } else {
-      statusBadge.className = 'status-badge live';
-      statusText.textContent = '实时';
-    }
-
-    // 更新时间
-    const nyTime = data.nyTime;
-    const headerTime = document.getElementById('headerTime');
-    const dataSource = data._mock ? ' [演示模式]' : data._stale ? ' [缓存模式]' : '';
-    headerTime.textContent = `美东时间 ${formatTime(nyTime)} ${getDayName(nyTime.getDay())} | 更新于 ${formatTime(new Date())}${dataSource}`;
+    marketData = data;
 
     // 隐藏加载
     loading.style.display = 'none';
 
-    // 确保当前活跃的tab有active class
-    const activeTab = document.querySelector('.tab-content.active');
-    if (!activeTab) {
-      document.getElementById('tab-today').classList.add('active');
-    }
-
-    // 渲染所有Tab
-    renderTodayTab(data);
-    renderShortTermTab(data);
-    renderMidTermTab(data);
-    renderLongTermTab(data);
-    renderHistoryTab();
+    // 渲染
+    renderAllTabs(data);
+    updateHeaderStatus(data);
 
     // 记录今日定投
     if (!data._mock && !data._stale) {
@@ -1276,10 +1305,19 @@ async function refreshData() {
   } catch (err) {
     console.error('Data fetch error:', err);
     loading.style.display = 'none';
-    error.style.display = 'block';
-    document.getElementById('errorMsg').textContent = `数据加载失败: ${err.message}`;
-    statusBadge.className = 'status-badge error';
-    statusText.textContent = '离线';
+
+    // 如果有缓存数据，即使刷新失败也显示缓存
+    if (marketData) {
+      renderAllTabs(marketData);
+      updateHeaderStatus({...marketData, _stale: true});
+    } else {
+      error.style.display = 'block';
+      document.getElementById('errorMsg').textContent = `数据加载失败: ${err.message}`;
+      const statusBadge = document.getElementById('statusBadge');
+      const statusText = document.getElementById('statusText');
+      statusBadge.className = 'status-badge error';
+      statusText.textContent = '离线';
+    }
   } finally {
     refreshBtn.classList.remove('spinning');
   }
