@@ -19,6 +19,8 @@ const CONFIG = {
   },
   CACHE_DURATION: 5 * 60 * 1000, // 5分钟缓存
   USE_MOCK: false, // 强制使用模拟数据（调试用）
+  // GitHub缓存路径（与index.html同目录）
+  GITHUB_CACHE_URL: './cache.json',
 };
 
 // ===== 用户设置（预填默认值）=====
@@ -39,17 +41,40 @@ let currentProxyIndex = 0;
 let consecutiveAddDays = 0; // 连续加仓天数
 
 // ===== 初始化 =====
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
   loadSettings();
 
-  // 速度优化：先立即显示缓存数据，再后台刷新
-  const cached = loadCachedData();
-  if (cached) {
-    marketData = cached;
-    renderAllTabs(cached);
-    updateHeaderStatus(cached);
+  // 速度优化：优先读GitHub缓存（秒开），再后台拉新数据
+  try {
+    const githubCache = await fetchGitHubCache();
+    if (githubCache) {
+      githubCache._source = 'github-cache';
+      marketData = githubCache;
+      renderAllTabs(githubCache);
+      updateHeaderStatus(githubCache);
+      document.getElementById('loadingState').style.display = 'none';
+      // 后台静默尝试获取更新数据
+      fetchAllMarketData().then(fresh => {
+        if (fresh && !fresh._mock && !fresh._stale) {
+          marketData = fresh;
+          renderAllTabs(fresh);
+          updateHeaderStatus(fresh);
+        }
+      }).catch(() => {});
+      return; // 有缓存就不再走loading流程
+    }
+  } catch (e) {
+    console.warn('GitHub cache fetch failed:', e);
+  }
+
+  // 无GitHub缓存，尝试localStorage缓存
+  const localCached = loadCachedData();
+  if (localCached) {
+    localCached._source = 'local-cache';
+    marketData = localCached;
+    renderAllTabs(localCached);
+    updateHeaderStatus(localCached);
     document.getElementById('loadingState').style.display = 'none';
-    // 后台静默刷新
     fetchAllMarketData().then(fresh => {
       if (fresh && !fresh._mock) {
         marketData = fresh;
@@ -57,10 +82,31 @@ document.addEventListener('DOMContentLoaded', () => {
         updateHeaderStatus(fresh);
       }
     }).catch(() => {});
-  } else {
-    refreshData();
+    return;
   }
+
+  // 完全无缓存，走完整加载
+  refreshData();
 });
+
+// 读取GitHub上的cache.json
+async function fetchGitHubCache() {
+  try {
+    const response = await fetch(CONFIG.GITHUB_CACHE_URL);
+    if (!response.ok) return null;
+    const data = await response.json();
+    // 检查数据是否过期（超过2小时视为过期，但仍显示）
+    const age = Date.now() - new Date(data.updatedAt || data.timestamp).getTime();
+    if (age > 24 * 60 * 60 * 1000) return null; // 超过24小时不用
+    // 解析nyTime为Date对象
+    if (typeof data.nyTime === 'string') {
+      data.nyTime = new Date(data.nyTime);
+    }
+    return data;
+  } catch (e) {
+    return null;
+  }
+}
 
 // 渲染所有Tab的统一入口
 function renderAllTabs(data) {

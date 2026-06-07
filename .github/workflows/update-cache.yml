@@ -1,0 +1,36 @@
+name: 更新市场数据缓存
+
+on:
+  schedule:
+    # 美股交易时间：美东9:30-16:00 = 北京21:30-4:00
+    # 每15分钟更新一次（仅交易日）
+    - cron: '*/15 13-20 * * 1-5'   # 北京时间21:30-4:00对应UTC 13:30-20:00
+    # 非交易时间每小时更新一次
+    - cron: '0 * * * *'
+  workflow_dispatch: # 允许手动触发
+
+jobs:
+  update-cache:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: 更新市场数据
+        run: node scripts/update-cache.js
+
+      - name: 提交并推送缓存
+        run: |
+          git config user.name "nasdaq-dca-bot"
+          git config user.email "nasdaq-dca-bot@users.noreply.github.com"
+          git add cache.json
+          git diff --staged --quiet || git commit -m "🔄 自动更新市场数据 $(date -u '+%Y-%m-%d %H:%M UTC')"
+          git push
