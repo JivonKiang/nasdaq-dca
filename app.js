@@ -871,19 +871,57 @@ function getUpcomingEvents(days = 5) {
     '2026-09-04', '2026-10-02', '2026-11-06', '2026-12-04',
   ];
 
+  // GDP发布日（每季度末后一个月）
+  const gdpDates = [
+    '2026-01-29', '2026-04-29', '2026-07-29', '2026-10-29',
+  ];
+
+  // 零售销售（通常月中）
+  const retailDates = [
+    '2026-01-16', '2026-02-18', '2026-03-17', '2026-04-16',
+    '2026-05-15', '2026-06-16', '2026-07-16', '2026-08-14',
+    '2026-09-16', '2026-10-16', '2026-11-17', '2026-12-16',
+  ];
+
+  // PPI发布日（通常为月中，CPI次日）
+  const ppiDates = [
+    '2026-01-16', '2026-02-13', '2026-03-12', '2026-04-15',
+    '2026-05-14', '2026-06-12', '2026-07-16', '2026-08-13',
+    '2026-09-11', '2026-10-15', '2026-11-12', '2026-12-11',
+  ];
+
+  // 消费者信心指数（密歇根大学，通常月中）
+  const consumerConfidenceDates = [
+    '2026-01-16', '2026-02-13', '2026-03-13', '2026-04-17',
+    '2026-05-15', '2026-06-12', '2026-07-17', '2026-08-14',
+    '2026-09-18', '2026-10-16', '2026-11-13', '2026-12-18',
+  ];
+
   for (let i = 0; i < days; i++) {
     const date = new Date(today);
     date.setDate(date.getDate() + i);
     const dateStr = formatDateStr(date);
 
     fomcDates.forEach(d => {
-      if (d === dateStr) events.push({ date: d, name: 'FOMC利率决议', impact: 'neutral', level: '一级' });
+      if (d === dateStr) events.push({ date: d, name: 'FOMC利率决议', impact: 'neutral', level: '一级', impactRating: '高' });
     });
     cpiDates.forEach(d => {
-      if (d === dateStr) events.push({ date: d, name: 'CPI通胀数据', impact: 'neutral', level: '一级' });
+      if (d === dateStr) events.push({ date: d, name: 'CPI通胀数据', impact: 'neutral', level: '一级', impactRating: '高' });
     });
     nonFarmDates.forEach(d => {
-      if (d === dateStr) events.push({ date: d, name: '非农就业数据', impact: 'neutral', level: '一级' });
+      if (d === dateStr) events.push({ date: d, name: '非农就业数据', impact: 'neutral', level: '一级', impactRating: '高' });
+    });
+    gdpDates.forEach(d => {
+      if (d === dateStr) events.push({ date: d, name: 'GDP数据', impact: 'neutral', level: '二级', impactRating: '中' });
+    });
+    retailDates.forEach(d => {
+      if (d === dateStr) events.push({ date: d, name: '零售销售', impact: 'neutral', level: '二级', impactRating: '中' });
+    });
+    ppiDates.forEach(d => {
+      if (d === dateStr) events.push({ date: d, name: 'PPI生产者物价', impact: 'neutral', level: '二级', impactRating: '中' });
+    });
+    consumerConfidenceDates.forEach(d => {
+      if (d === dateStr) events.push({ date: d, name: '消费者信心指数', impact: 'neutral', level: '三级', impactRating: '低' });
     });
   }
 
@@ -892,7 +930,7 @@ function getUpcomingEvents(days = 5) {
 
   // 如果没有事件
   if (events.length === 0) {
-    return [{ date: formatDateStr(new Date(today)), name: '近5日数据真空期', impact: 'neutral', level: '无' }];
+    return [{ date: formatDateStr(new Date(today)), name: '近5日数据真空期', impact: 'neutral', level: '无', impactRating: '低' }];
   }
 
   return events;
@@ -1000,6 +1038,269 @@ function getHistoryTotalInvested() {
   return history.reduce((sum, h) => sum + h.amount, 0);
 }
 
+// ===== 多维度分析系统 =====
+
+function generateMultiDimensionAnalysis(data) {
+  const pe = data.pe;
+  const vix = data.vix || 0;
+  const price = data.ndx.price;
+  const ma20 = data.ndx.ma20;
+  const drawdown = data.ndx.drawdown;
+  const change = data.ndx.change;
+  const weeklyChange = data.ndx.weeklyChange;
+  const treasury10y = data.treasury10y || 0;
+
+  // --- 基本面分析 ---
+  const peMid = 26.5;
+  const peDiffPct = ((pe - peMid) / peMid * 100);
+  const pePercentile = calculatePEPercentile(pe);
+  let fundamentalColor = 'green';
+  let fundamentalConclusion = '估值合理偏低，具备安全边际';
+  if (pe > 40) {
+    fundamentalColor = 'red';
+    fundamentalConclusion = '估值偏高，不具备安全边际';
+  } else if (pe > 35) {
+    fundamentalColor = 'orange';
+    fundamentalConclusion = '估值偏高，安全边际不足';
+  } else if (pe > 32) {
+    fundamentalColor = 'yellow';
+    fundamentalConclusion = '估值偏高，安全边际有限';
+  } else if (pe > 28) {
+    fundamentalColor = 'blue';
+    fundamentalConclusion = '估值合理，可正常定投';
+  }
+
+  const fundamental = {
+    title: '基本面分析',
+    subtitle: '价值投资者视角',
+    color: fundamentalColor,
+    icon: '📊',
+    items: [
+      `PE当前值 ${pe.toFixed(1)} 倍 vs 历史中枢 25-28 倍`,
+      `当前PE位于历史 ${pePercentile.toFixed(0)}% 分位`,
+      `2000年泡沫峰值约75倍，2021年高点约38倍`,
+    ],
+    conclusion: fundamentalConclusion,
+    consensus: pe > 35 ? 'pause' : pe > 28 ? 'neutral' : 'buy',
+  };
+
+  // --- 情绪面分析 ---
+  let sentimentColor = 'green';
+  let sentimentConclusion = '市场情绪平稳，适合入场';
+  let sentimentStatus = '正常';
+  if (vix > 30) {
+    sentimentColor = 'red';
+    sentimentConclusion = '市场恐慌情绪浓厚，谨慎入场';
+    sentimentStatus = '高恐慌';
+  } else if (vix > 25) {
+    sentimentColor = 'orange';
+    sentimentConclusion = '市场情绪偏恐慌，观望为主';
+    sentimentStatus = '偏高';
+  } else if (vix > 20) {
+    sentimentColor = 'yellow';
+    sentimentConclusion = '市场情绪偏乐观，保持警惕';
+    sentimentStatus = '偏乐观';
+  } else if (change > 2 || weeklyChange > 3) {
+    sentimentColor = 'yellow';
+    sentimentConclusion = '市场情绪偏乐观，不适合追高';
+    sentimentStatus = '偏乐观';
+  } else if (change < -3 || weeklyChange < -5) {
+    sentimentColor = 'green';
+    sentimentConclusion = '市场情绪偏悲观，定投良机';
+    sentimentStatus = '偏悲观';
+  }
+
+  const sentiment = {
+    title: '情绪面分析',
+    subtitle: '行为金融学视角',
+    color: sentimentColor,
+    icon: '🧠',
+    items: [
+      `VIX当前值 ${vix.toFixed(1)}（${sentimentStatus}）`,
+      `前日涨跌 ${change >= 0 ? '+' : ''}${change.toFixed(2)}%，周涨跌 ${weeklyChange >= 0 ? '+' : ''}${weeklyChange.toFixed(2)}%`,
+      `散户情绪指标：${vix < 15 && change > 1 ? '贪婪' : vix > 25 ? '恐惧' : '中性'}`,
+    ],
+    conclusion: sentimentConclusion,
+    consensus: vix > 30 ? 'pause' : vix > 25 ? 'neutral' : 'buy',
+  };
+
+  // --- 技术面分析 ---
+  const ma20Distance = ((price - ma20) / ma20 * 100);
+  let techColor = 'blue';
+  let techConclusion = '技术面中性';
+  let techStatus = '中性';
+  if (ma20Distance > 5) {
+    techColor = 'orange';
+    techConclusion = '技术面显示超买';
+    techStatus = '超买';
+  } else if (ma20Distance > 2) {
+    techColor = 'yellow';
+    techConclusion = '技术面偏强';
+    techStatus = '偏强';
+  } else if (ma20Distance < -5) {
+    techColor = 'green';
+    techConclusion = '技术面显示超卖';
+    techStatus = '超卖';
+  } else if (ma20Distance < -2) {
+    techColor = 'blue';
+    techConclusion = '技术面偏弱';
+    techStatus = '偏弱';
+  }
+
+  const recentCloses = data.ndx.recentCloses;
+  const ma60 = recentCloses.length >= 60
+    ? recentCloses.slice(-60).reduce((a, b) => a + b, 0) / 60
+    : recentCloses.reduce((a, b) => a + b, 0) / recentCloses.length;
+  const ma60Distance = ((price - ma60) / ma60 * 100);
+
+  const tech = {
+    title: '技术面分析',
+    subtitle: '量化交易视角',
+    color: techColor,
+    icon: '📈',
+    items: [
+      `价格 vs 20日均线：${ma20Distance >= 0 ? '+' : ''}${ma20Distance.toFixed(1)}%（${techStatus}）`,
+      `60日回撤幅度：${drawdown.toFixed(1)}%`,
+      `近期趋势：${data.ndx.ma20Direction === 'up' ? '上涨' : '下跌'}（20日均线方向）`,
+    ],
+    conclusion: techConclusion,
+    consensus: ma20Distance > 5 ? 'pause' : ma20Distance < -5 ? 'buy' : 'neutral',
+  };
+
+  // --- 消息面分析 ---
+  const upcomingEvents = getUpcomingEvents(5);
+  const majorEvents = upcomingEvents.filter(e => e.level === '一级');
+  const hasMajorEventSoon = majorEvents.length > 0;
+  const nextEvent = upcomingEvents[0];
+  let nextEventText = '近期无重大事件';
+  if (nextEvent && nextEvent.name !== '近5日数据真空期') {
+    const daysUntil = Math.ceil((new Date(nextEvent.date) - new Date(getNYTime())) / (1000 * 60 * 60 * 24));
+    nextEventText = `${nextEvent.name}（${daysUntil <= 0 ? '今日' : daysUntil + '天后'}）`;
+  }
+
+  let macroColor = 'blue';
+  let macroConclusion = '宏观环境中性';
+  if (treasury10y > 5.0) {
+    macroColor = 'red';
+    macroConclusion = '资金成本高企，宏观环境不支持';
+  } else if (treasury10y > 4.5) {
+    macroColor = 'orange';
+    macroConclusion = '资金成本偏高，宏观环境偏紧';
+  } else if (treasury10y < 3.5) {
+    macroColor = 'green';
+    macroConclusion = '资金成本较低，宏观环境支持';
+  }
+
+  if (hasMajorEventSoon) {
+    macroColor = macroColor === 'green' ? 'yellow' : 'orange';
+    macroConclusion += '，但近期有重要事件需关注';
+  }
+
+  const macro = {
+    title: '消息面分析',
+    subtitle: '宏观策略视角',
+    color: macroColor,
+    icon: '🌍',
+    items: [
+      `近期重要事件：${nextEventText}`,
+      `事件对市场影响：${hasMajorEventSoon ? '可能引发短期波动' : '有限'}`,
+      `10年期美债收益率：${treasury10y.toFixed(2)}%（资金成本）`,
+    ],
+    conclusion: macroConclusion,
+    consensus: treasury10y > 5.0 || hasMajorEventSoon ? 'pause' : treasury10y > 4.5 ? 'neutral' : 'buy',
+  };
+
+  // --- 综合决策 ---
+  const perspectives = [fundamental, sentiment, tech, macro];
+  const pauseCount = perspectives.filter(p => p.consensus === 'pause').length;
+  const buyCount = perspectives.filter(p => p.consensus === 'buy').length;
+  const neutralCount = perspectives.filter(p => p.consensus === 'neutral').length;
+
+  let overallConsensus = 'neutral';
+  let overallAction = '维持当前档位';
+  if (pauseCount >= 3) {
+    overallConsensus = 'pause';
+    overallAction = '建议暂停或最低档定投';
+  } else if (pauseCount >= 2) {
+    overallConsensus = 'caution';
+    overallAction = '建议谨慎，降低档位';
+  } else if (buyCount >= 3) {
+    overallConsensus = 'buy';
+    overallAction = '建议积极定投';
+  } else if (buyCount >= 2) {
+    overallConsensus = 'favorable';
+    overallAction = '建议正常或加码定投';
+  }
+
+  // 恢复定投触发条件
+  const resumeConditions = [
+    { label: 'PE < 35', check: pe < 35, current: `当前 ${pe.toFixed(1)}` },
+    { label: 'VIX < 20', check: vix < 20, current: `当前 ${vix.toFixed(1)}` },
+    { label: '无重大事件', check: !hasMajorEventSoon, current: hasMajorEventSoon ? '有' : '无' },
+  ];
+  const resumeMet = resumeConditions.filter(c => c.check).length;
+  const resumeTotal = resumeConditions.length;
+
+  return {
+    perspectives: [fundamental, sentiment, tech, macro],
+    consensus: {
+      pauseCount,
+      buyCount,
+      neutralCount,
+      total: perspectives.length,
+      overallConsensus,
+      overallAction,
+    },
+    resumeConditions,
+    resumeMet,
+    resumeTotal,
+    canResume: resumeMet === resumeTotal,
+  };
+}
+
+// ===== 综合评分计算 =====
+function calculateCompositeScore(data, analysis) {
+  let score = 50;
+
+  // PE评分（最高25分）
+  if (data.pe <= 25) score += 25;
+  else if (data.pe <= 28) score += 15;
+  else if (data.pe <= 32) score += 5;
+  else if (data.pe <= 35) score -= 10;
+  else if (data.pe <= 40) score -= 20;
+  else score -= 25;
+
+  // VIX评分（最高20分）
+  if (data.vix > 30) score += 20;
+  else if (data.vix > 25) score += 10;
+  else if (data.vix > 20) score += 0;
+  else if (data.vix > 15) score -= 5;
+  else score -= 10;
+
+  // 技术面评分（最高20分）
+  const ma20Distance = ((data.ndx.price - data.ndx.ma20) / data.ndx.ma20 * 100);
+  if (ma20Distance < -5) score += 20;
+  else if (ma20Distance < -2) score += 10;
+  else if (ma20Distance < 2) score += 0;
+  else if (ma20Distance < 5) score -= 10;
+  else score -= 20;
+
+  // 宏观评分（最高15分）
+  if (data.treasury10y < 3.5) score += 15;
+  else if (data.treasury10y < 4.0) score += 5;
+  else if (data.treasury10y < 4.5) score -= 5;
+  else if (data.treasury10y < 5.0) score -= 10;
+  else score -= 15;
+
+  // 事件评分（最高20分）
+  const upcomingEvents = getUpcomingEvents(5);
+  const hasMajorEvent = upcomingEvents.some(e => e.level === '一级');
+  if (!hasMajorEvent) score += 20;
+  else score -= 10;
+
+  return Math.max(0, Math.min(100, score));
+}
+
 // ===== UI渲染层 =====
 
 function renderTodayTab(data) {
@@ -1016,6 +1317,8 @@ function renderTodayTab(data) {
   const trend = analyzeTrend(data);
   const persuasion = generateDataPersuasion(data);
   const events = getUpcomingEvents(5);
+  const analysis = generateMultiDimensionAnalysis(data);
+  const compositeScore = calculateCompositeScore(data, analysis);
 
   // PE仪表盘百分比
   const pePercent = Math.min(100, Math.max(0, ((pe - 15) / 35) * 100));
@@ -1036,54 +1339,19 @@ function renderTodayTab(data) {
   // 连续加仓警告
   const consecutiveWarning = addResult.warning || '';
 
-  // 构建详细决策理由 bullet points
-  const peMid = 26.5; // 长期中枢中值
-  const peDiffPct = ((pe - peMid) / peMid * 100).toFixed(0);
-  const peDirection = pe > peMid ? '高于' : '低于';
-
-  let actionReasons = [];
-  // PE档位说明
-  const peThresholds = [
-    { max: 25, label: '加倍档（≤25），估值偏低', color: 'green' },
-    { max: 28, label: '1.5倍档（25-28），估值合理偏低', color: 'blue' },
-    { max: 32, label: '正常档（28-32），估值合理', color: 'blue' },
-    { max: 35, label: '半额档（32-35），估值偏高', color: 'yellow' },
-    { max: 40, label: '最低档（35-40），估值偏高', color: 'orange' },
-    { max: 999, label: '暂停档（>40），估值过高', color: 'red' },
-  ];
-  const peBand = peThresholds.find(t => pe <= t.max) || peThresholds[peThresholds.length - 1];
-  actionReasons.push(`PE=${pe.toFixed(1)}倍，处于${peBand.label}`);
-  actionReasons.push(`${peDirection}长期中枢25-28倍约${Math.abs(peDiffPct)}%`);
-
-  if (grade.shares === 0) {
-    actionReasons.push('等待PE回落至35以下再恢复定投');
-  } else if (grade.shares >= 1.5) {
-    actionReasons.push('当前估值较低，建议积极收集筹码');
+  // 综合评分颜色
+  let scoreColor = 'var(--accent-green)';
+  let scoreLabel = '积极定投';
+  if (compositeScore < 30) {
+    scoreColor = 'var(--accent-red)';
+    scoreLabel = '建议暂停';
+  } else if (compositeScore < 50) {
+    scoreColor = 'var(--accent-orange)';
+    scoreLabel = '谨慎定投';
+  } else if (compositeScore < 70) {
+    scoreColor = 'var(--accent-yellow)';
+    scoreLabel = '中性观望';
   }
-
-  if (addResult.shouldAdd && addResult.shares > 0) {
-    const dropDays = Math.abs(Math.floor(data.ndx.change / 2));
-    actionReasons.push(`前日跌${data.ndx.change.toFixed(2)}%，触发加仓条件`);
-  }
-
-  // 事件影响
-  const upcomingEvents = getUpcomingEvents(5);
-  const majorEventSoon = upcomingEvents.find(e => e.level === '一级');
-  if (majorEventSoon) {
-    const eventDateObj = new Date(majorEventSoon.date + 'T12:00:00');
-    const eventDateText = `${eventDateObj.getMonth() + 1}月${eventDateObj.getDate()}日`;
-    actionReasons.push(`${eventDateText}${majorEventSoon.name}发布，建议观望`);
-  }
-
-  if (eventDowngrade) {
-    actionReasons.push(`事件降档：${addResult.step3}`);
-  }
-
-  if (consecutiveWarning) {
-    actionReasons.push(consecutiveWarning);
-  }
-
-  const actionReasonsHTML = actionReasons.map(r => `<li style="margin-bottom:4px;">${r}</li>`).join('');
 
   // 非交易日提示
   const nonTradingNote = !data.isTradingDay
@@ -1105,22 +1373,80 @@ function renderTodayTab(data) {
     ? `<div class="alert-banner warning">⚠️ ${consecutiveWarning}</div>`
     : '';
 
-  // 事件列表HTML
-  const eventsHTML = events.map(e => {
+  // 四维度分析卡片HTML
+  const perspectiveCardsHTML = analysis.perspectives.map(p => {
+    const colorMap = {
+      green: { border: 'var(--accent-green)', bg: 'rgba(34,197,94,0.08)', text: 'var(--accent-green)' },
+      red: { border: 'var(--accent-red)', bg: 'rgba(239,68,68,0.08)', text: 'var(--accent-red)' },
+      yellow: { border: 'var(--accent-yellow)', bg: 'rgba(234,179,8,0.08)', text: 'var(--accent-yellow)' },
+      orange: { border: 'var(--accent-orange)', bg: 'rgba(249,115,22,0.08)', text: 'var(--accent-orange)' },
+      blue: { border: 'var(--accent-blue)', bg: 'rgba(59,130,246,0.08)', text: 'var(--accent-blue)' },
+    };
+    const c = colorMap[p.color] || colorMap.blue;
+    return `
+      <div style="background:${c.bg};border:1px solid ${c.border};border-radius:10px;padding:12px;">
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;">
+          <span style="font-size:16px;">${p.icon}</span>
+          <div>
+            <div style="font-size:13px;font-weight:700;color:var(--text-primary);">${p.title}</div>
+            <div style="font-size:10px;color:var(--text-muted);">${p.subtitle}</div>
+          </div>
+        </div>
+        <div style="font-size:11px;color:var(--text-secondary);line-height:1.7;margin-bottom:8px;">
+          ${p.items.map(item => `<div>• ${item}</div>`).join('')}
+        </div>
+        <div style="font-size:12px;font-weight:700;color:${c.text};padding:6px 8px;background:rgba(0,0,0,0.15);border-radius:6px;">
+          结论：${p.conclusion}
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  // 恢复定投条件进度HTML
+  const resumeProgressHTML = analysis.resumeConditions.map(c => {
+    const metColor = c.check ? 'var(--accent-green)' : 'var(--accent-red)';
+    const metIcon = c.check ? '✅' : '⏳';
+    return `
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.05);">
+        <span style="font-size:12px;color:var(--text-secondary);">${metIcon} ${c.label}</span>
+        <span style="font-size:12px;color:${metColor};font-weight:600;">${c.current}</span>
+      </div>
+    `;
+  }).join('');
+
+  const resumeProgressPercent = (analysis.resumeMet / analysis.resumeTotal * 100);
+  const resumeStatusText = analysis.canResume
+    ? '<span style="color:var(--accent-green);font-weight:700;">✅ 条件已满足，可恢复定投</span>'
+    : `<span style="color:var(--accent-yellow);">⏳ 已满足 ${analysis.resumeMet}/${analysis.resumeTotal} 个条件</span>`;
+
+  // 事件时间线HTML（增强版）
+  const eventTimelineHTML = events.map(e => {
     const impactClass = e.impact === 'bullish' ? 'bullish' : e.impact === 'bearish' ? 'bearish' : 'neutral';
     const impactText = e.impact === 'bullish' ? '利好' : e.impact === 'bearish' ? '利空' : '中性';
     const dateObj = new Date(e.date + 'T12:00:00');
     const dateText = `${dateObj.getMonth() + 1}月${dateObj.getDate()}日`;
+    const daysUntil = Math.ceil((dateObj - new Date(getNYTime())) / (1000 * 60 * 60 * 24));
+    const countdownText = daysUntil <= 0 ? '今日' : `还有${daysUntil}天`;
+    const ratingColor = e.impactRating === '高' ? 'var(--accent-red)' : e.impactRating === '中' ? 'var(--accent-yellow)' : 'var(--text-muted)';
     return `
       <div class="event-item">
         <span class="event-date">${dateText}</span>
         <div style="flex:1">
           <div class="event-name">${e.name}</div>
+          <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">${countdownText}</div>
         </div>
-        <span class="event-impact ${impactClass}">${impactText}</span>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:2px;">
+          <span class="event-impact ${impactClass}">${impactText}</span>
+          <span style="font-size:10px;color:${ratingColor};font-weight:600;">${e.impactRating}影响</span>
+        </div>
       </div>
     `;
   }).join('');
+
+  // 操作指令大字显示
+  const totalShares = (grade.shares + (addResult.shouldAdd ? addResult.shares : 0)).toFixed(1);
+  const actionText = grade.shares === 0 ? '暂停定投' : `定投 ${totalShares} 份`;
+  const actionClass = grade.class;
 
   tab.innerHTML = `
     ${nonTradingNote}
@@ -1128,58 +1454,71 @@ function renderTodayTab(data) {
     ${extremeWarning}
     ${consecutiveAlert}
 
-    <!-- 操作指令 -->
-    <div class="card action-card ${grade.class}">
-      <div class="card-title"><span class="emoji">⚡</span>操作指令</div>
-
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-        <span style="font-size:13px;">✅ 周四定投</span>
-        <span class="${grade.color}" style="font-weight:700;font-size:15px;">${grade.shares}份</span>
+    <!-- 综合评分 -->
+    <div class="card" style="text-align:center;padding:20px 16px;">
+      <div style="font-size:12px;color:var(--text-muted);margin-bottom:8px;">📊 投资仪表盘综合评分</div>
+      <div style="font-size:48px;font-weight:800;color:${scoreColor};line-height:1;">${compositeScore}</div>
+      <div style="font-size:14px;color:${scoreColor};font-weight:600;margin-top:4px;">${scoreLabel}</div>
+      <div style="width:100%;height:6px;background:rgba(0,0,0,0.3);border-radius:3px;margin-top:12px;overflow:hidden;">
+        <div style="width:${compositeScore}%;height:100%;background:${scoreColor};border-radius:3px;transition:width 0.8s ease;"></div>
       </div>
-      <div style="font-size:12px;color:var(--text-muted);margin-bottom:12px;">
-        PE=${pe.toFixed(1)} → ${grade.level}档
-      </div>
-
-      <div style="border-top:1px solid var(--border);padding-top:10px;">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-          <span style="font-size:13px;">✅ 额外加仓</span>
-          <span style="font-weight:700;font-size:15px;" class="${addResult.shouldAdd ? 'green' : 'muted'}">
-            ${addResult.shouldAdd ? `加仓${addResult.shares}份` : '不加仓'}
-          </span>
-        </div>
-        ${addResult.reason ? `<div class="action-reason">${addResult.reason}</div>` : ''}
-        ${eventDowngrade ? `<div style="font-size:11px;color:var(--accent-yellow);margin-top:4px;">⚠️ 事件降档已触发</div>` : ''}
-      </div>
-
-      <div style="border-top:1px solid var(--border);padding-top:10px;margin-top:10px;">
-        <div style="display:flex;justify-content:space-between;font-size:13px;">
-          <span>📊 今日操作：基准${userSettings.baseShares}份</span>
-          <span class="${grade.color}" style="font-weight:800;font-size:18px;">
-            ${(grade.shares + (addResult.shouldAdd ? addResult.shares : 0)).toFixed(1)}份
-          </span>
-        </div>
-      </div>
-
-      <!-- 详细决策理由 -->
-      <div style="border-top:1px solid var(--border);padding-top:10px;margin-top:10px;">
-        <div style="font-size:12px;font-weight:700;color:var(--text-secondary);margin-bottom:6px;">📋 决策理由</div>
-        <ul style="font-size:12px;color:var(--text-secondary);line-height:1.6;padding-left:16px;margin:0;">
-          ${actionReasonsHTML}
-        </ul>
+      <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--text-muted);margin-top:4px;">
+        <span>0</span><span>25</span><span>50</span><span>75</span><span>100</span>
       </div>
     </div>
 
-    <!-- 心理锚点 -->
-    <div class="card">
-      <div class="card-title"><span class="emoji">🧠</span>心理锚点</div>
-      <div style="font-size:14px;line-height:1.8;color:var(--text-secondary)">
-        今日PE=<span class="${grade.color}" style="font-weight:700">${pe.toFixed(1)}</span>倍（<span class="${grade.color}">${grade.level}</span>档）。
-        纳指长期PE中枢约25-28倍。
-        你每周定投占总资产仅<span class="${grade.color}" style="font-weight:700">${persuasion.weeklyRatio}%</span>，
-        即便全亏也不影响生活。
-        ${persuasion.totalShares > 0 ? `你当前定投占总资产的<span class="${grade.color}" style="font-weight:700">${persuasion.investedRatio}%</span>，累计${persuasion.totalShares.toFixed(1)}份。` : ''}
-        <strong style="color:var(--text-primary)">浮亏是假的，份额是真的。</strong>
+    <!-- 操作指令 -->
+    <div class="card action-card ${actionClass}">
+      <div class="card-title"><span class="emoji">⚡</span>操作指令</div>
+      <div class="action-amount ${grade.color}">${actionText}</div>
+      <div style="text-align:center;font-size:12px;color:var(--text-muted);margin-bottom:12px;">
+        PE=${pe.toFixed(1)}倍 → ${grade.level}档
+        ${addResult.shouldAdd ? ` | 额外加仓 ${addResult.shares} 份` : ''}
       </div>
+
+      <!-- 综合决策 -->
+      <div style="background:rgba(0,0,0,0.2);border-radius:8px;padding:12px;margin-top:8px;">
+        <div style="font-size:12px;font-weight:700;color:var(--text-primary);margin-bottom:6px;">
+          🎯 投资团队共识：${analysis.consensus.pauseCount}/${analysis.consensus.total} 视角建议暂停
+        </div>
+        <div style="font-size:12px;color:var(--text-secondary);line-height:1.6;">
+          ${analysis.consensus.overallAction}
+        </div>
+        ${!analysis.canResume ? `
+          <div style="font-size:11px;color:var(--accent-yellow);margin-top:6px;padding:6px 8px;background:rgba(234,179,8,0.1);border-radius:6px;">
+            📌 恢复定投触发条件：PE < 35 且 VIX < 20 且 无重大事件
+          </div>
+        ` : ''}
+      </div>
+    </div>
+
+    <!-- 四维度分析卡片网格 -->
+    <div class="card">
+      <div class="card-title"><span class="emoji">🔍</span>投资团队多视角分析</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+        ${perspectiveCardsHTML}
+      </div>
+    </div>
+
+    <!-- 恢复定投条件进度 -->
+    <div class="card">
+      <div class="card-title"><span class="emoji">📌</span>恢复定投触发条件</div>
+      ${resumeProgressHTML}
+      <div style="margin-top:10px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+          <span style="font-size:12px;color:var(--text-secondary);">总体进度</span>
+          <span style="font-size:12px;font-weight:700;">${resumeStatusText}</span>
+        </div>
+        <div style="width:100%;height:8px;background:rgba(0,0,0,0.3);border-radius:4px;overflow:hidden;">
+          <div style="width:${resumeProgressPercent}%;height:100%;background:${analysis.canResume ? 'var(--accent-green)' : 'var(--accent-yellow)'};border-radius:4px;transition:width 0.8s ease;"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 近期事件时间线 -->
+    <div class="card">
+      <div class="card-title"><span class="emoji">📅</span>近期事件时间线</div>
+      ${eventTimelineHTML}
     </div>
 
     <!-- 环境快照 -->
@@ -1231,10 +1570,17 @@ function renderTodayTab(data) {
       ${generateMiniChart(data.ndx.recentCloses)}
     </div>
 
-    <!-- 事件日历 -->
+    <!-- 心理锚点 -->
     <div class="card">
-      <div class="card-title"><span class="emoji">📅</span>事件日历</div>
-      ${eventsHTML}
+      <div class="card-title"><span class="emoji">🧠</span>心理锚点</div>
+      <div style="font-size:14px;line-height:1.8;color:var(--text-secondary)">
+        今日PE=<span class="${grade.color}" style="font-weight:700">${pe.toFixed(1)}</span>倍（<span class="${grade.color}">${grade.level}</span>档）。
+        纳指长期PE中枢约25-28倍。
+        你每周定投占总资产仅<span class="${grade.color}" style="font-weight:700">${persuasion.weeklyRatio}%</span>，
+        即便全亏也不影响生活。
+        ${persuasion.totalShares > 0 ? `你当前定投占总资产的<span class="${grade.color}" style="font-weight:700">${persuasion.investedRatio}%</span>，累计${persuasion.totalShares.toFixed(1)}份。` : ''}
+        <strong style="color:var(--text-primary)">浮亏是假的，份额是真的。</strong>
+      </div>
     </div>
 
     <!-- 趋势判断 -->
@@ -1249,9 +1595,6 @@ function renderTodayTab(data) {
       </div>
       <div style="font-size:12px;color:var(--text-secondary);margin-top:10px;line-height:1.6;">
         ${trend.advice}
-      </div>
-      <div style="font-size:12px;color:var(--text-muted);margin-top:8px;line-height:1.6;">
-        若PE下行至28→恢复1份正常档；若PE突破35→降至0.3份最低档。
       </div>
     </div>
 
@@ -1327,15 +1670,17 @@ function renderShortTermTab(data) {
       <div class="card-title"><span class="emoji">📅</span>近期事件影响</div>
       ${events.map(e => {
         const dateObj = new Date(e.date + 'T12:00:00');
+        const daysUntil = Math.ceil((dateObj - new Date(getNYTime())) / (1000 * 60 * 60 * 24));
+        const countdownText = daysUntil <= 0 ? '今日' : `还有${daysUntil}天`;
+        const ratingColor = e.impactRating === '高' ? 'var(--accent-red)' : e.impactRating === '中' ? 'var(--accent-yellow)' : 'var(--text-muted)';
         return `
           <div class="event-item">
             <span class="event-date">${dateObj.getMonth() + 1}/${dateObj.getDate()}</span>
             <div style="flex:1">
               <div class="event-name">${e.name}</div>
-              <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">
-                ${e.level === '一级' ? '⚠️ 可能触发事件降档' : '常规数据发布'}
-              </div>
+              <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">${countdownText}</div>
             </div>
+            <span style="font-size:10px;color:${ratingColor};font-weight:600;">${e.impactRating}影响</span>
           </div>
         `;
       }).join('')}
@@ -1490,9 +1835,9 @@ function renderLongTermTab(data) {
       <div style="font-size:13px;line-height:2;color:var(--text-secondary)">
         <div>1️⃣ 周四定投基准1份，按PE档位自动调整</div>
         <div>2️⃣ 加仓仅限周一/二/三/五，单日封顶1份</div>
-        <div>3️⃣ PE<25加倍 | 25-28为1.5倍 | 28-32正常 | 32-35半额 | 35-40最低 | >40暂停</div>
+        <div>3️⃣ PE&lt;25加倍 | 25-28为1.5倍 | 28-32正常 | 32-35半额 | 35-40最低 | &gt;40暂停</div>
         <div>4️⃣ 跌2-4%加仓0.5份 | 跌≥4%加仓1份 | 跌≥7%极端超跌</div>
-        <div>5️⃣ 一级事件前1日、VIX>30+周跌>5%、年末季末 → 降一档</div>
+        <div>5️⃣ 一级事件前1日、VIX&gt;30+周跌&gt;5%、年末季末 → 降一档</div>
         <div>6️⃣ 每周定投占总资产仅${persuasion.weeklyRatio}%，执行它，关掉软件</div>
       </div>
     </div>
