@@ -26,8 +26,8 @@ const CONFIG = {
 // ===== 用户设置（预填默认值）=====
 let userSettings = {
   startDate: '',          // 开始定投日期，首次记账时自动记录
-  totalAssets: 650000,    // 总资产65万
-  weeklyBase: 1000,       // 周四定投基准1000元
+  totalAssets: 1.0,       // 定投占比系数（1.0=基准）
+  weeklyBase: 1000,       // 周四定投基准1000元（内部计算用，不显示）
   holdings: 16,           // 15支纳指100 + 1支标普500 = 16支
 };
 
@@ -685,9 +685,12 @@ function analyzeTrend(data) {
 // ===== 数据说服 =====
 function generateDataPersuasion(data) {
   const pe = data.pe;
-  const totalAssets = userSettings.totalAssets;
-  const weeklyShares = data.peGrade.shares;
-  const weeklyRatio = ((weeklyShares * userSettings.weeklyBase / totalAssets) * 100).toFixed(4);
+  const assetRatio = userSettings.totalAssets; // 占比系数
+  // 兼容缓存数据中shares或amount字段
+  const weeklyShares = data.peGrade.shares || (data.peGrade.amount ? data.peGrade.amount / 1000 : 1);
+  // 每周定投占总资产比例 = 份数 × 基准 / 总资产
+  // 简化：1份基准定投占总资产的基准比例约0.15%，乘以系数
+  const weeklyRatio = (0.15 * weeklyShares * assetRatio).toFixed(4);
 
   // 历史定投收益概率（基于PE起点）
   let prob12m = '70%';
@@ -714,8 +717,9 @@ function generateDataPersuasion(data) {
   // 从定投记录计算累计份数
   const totalInvestedAmount = getHistoryTotalInvested();
   const totalShares = totalInvestedAmount / 1000;
-  const investedRatio = totalInvestedAmount > 0
-    ? ((totalInvestedAmount / totalAssets) * 100).toFixed(2)
+  // 累计投入占总资产比例（用系数简化）
+  const investedRatio = totalShares > 0
+    ? (0.15 * totalShares * assetRatio).toFixed(2)
     : '0.00';
 
   return {
@@ -814,7 +818,7 @@ function renderTodayTab(data) {
       <div style="font-size:14px;line-height:1.8;color:var(--text-secondary)">
         今日PE=<span class="${grade.color}" style="font-weight:700">${pe.toFixed(1)}</span>倍（<span class="${grade.color}">${grade.level}</span>档）。
         纳指长期PE中枢约25-28倍。
-        你每周定投占${(userSettings.totalAssets / 10000).toFixed(0)}万总资产仅<span class="${grade.color}" style="font-weight:700">${persuasion.weeklyRatio}%</span>，
+        你每周定投占总资产仅<span class="${grade.color}" style="font-weight:700">${persuasion.weeklyRatio}%</span>，
         即便全亏也不影响生活。
         ${persuasion.totalShares > 0 ? `你当前定投占总资产的<span class="${grade.color}" style="font-weight:700">${persuasion.investedRatio}%</span>，累计${persuasion.totalShares.toFixed(1)}份。` : ''}
         <strong style="color:var(--text-primary)">浮亏是假的，份额是真的。</strong>
@@ -1273,7 +1277,7 @@ function generateMidTermAdvice(data, volatility, peTrend) {
 
   // PE趋势
   if (peTrend === '下行') {
-    parts.push('PE呈下行趋势，意味着同样金额可以买到更多份额。这是定投的黄金时期，不要因为浮亏而停止。');
+    parts.push('PE呈下行趋势，意味着同样份数可以买到更多份额。这是定投的黄金时期，不要因为浮亏而停止。');
   } else if (peTrend === '上行') {
     parts.push('PE呈上行趋势，估值在抬高。按规则降低档位，控制投入节奏。');
   }
@@ -1437,12 +1441,12 @@ function loadSettings() {
 
   // 填充设置表单
   document.getElementById('setStartDate').value = userSettings.startDate || '';
-  document.getElementById('setTotalAssets').value = userSettings.totalAssets || 650000;
+  document.getElementById('setTotalAssets').value = userSettings.totalAssets || 1.0;
 }
 
 function saveSettings() {
   userSettings.startDate = document.getElementById('setStartDate').value;
-  userSettings.totalAssets = parseFloat(document.getElementById('setTotalAssets').value) || 650000;
+  userSettings.totalAssets = parseFloat(document.getElementById('setTotalAssets').value) || 1.0;
 
   localStorage.setItem('nasdaq_dca_settings', JSON.stringify(userSettings));
   closeSettings();
