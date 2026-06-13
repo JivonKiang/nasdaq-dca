@@ -1,6 +1,6 @@
 {
-  "timestamp": 1781307627898,
-  "nyTime": "2026-06-12T19:40:27.000Z",
+  "timestamp": 1781325699438,
+  "nyTime": "2026-06-13T00:41:39.000Z",
   "ndx": {
     "price": 29635.947,
     "prevClose": 25116.34,
@@ -8,7 +8,7 @@
     "weeklyChange": 2.3425539401594104,
     "high60d": 30660.599609375,
     "drawdown": 3.341919670291428,
-    "ma20": 29640.3501953125,
+    "ma20": 29640.35029296875,
     "ma20Direction": "down",
     "recentCloses": [
       25383.720703125,
@@ -54,7 +54,7 @@
       29084.5,
       28508.029296875,
       29446.1796875,
-      29635.947265625
+      29635.94921875
     ],
     "timestamps": [
       1776087000,
@@ -120,10 +120,10 @@
   ],
   "treasury10y": 4.487,
   "equityBondRatio": "0.33",
-  "isTradingDay": true,
+  "isTradingDay": false,
   "isThursday": false,
-  "daysToThursday": 6,
-  "dayOfWeek": 5,
+  "daysToThursday": 5,
+  "dayOfWeek": 6,
   "historicalPE": [
     37.2069765625,
     37.5736,
@@ -168,8 +168,8 @@
     40.1676,
     39.7064234375,
     40.45694375,
-    40.6087578125
+    40.608759375
   ],
   "dataSource": "yahoo-finance-server",
-  "updatedAt": "2026-06-12T23:40:28.164Z"
+  "updatedAt": "2026-06-13T04:41:40.099Z"
 }
