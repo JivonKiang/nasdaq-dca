@@ -1,6 +1,6 @@
 {
-  "timestamp": 1782066242348,
-  "nyTime": "2026-06-21T14:24:02.000Z",
+  "timestamp": 1782074634009,
+  "nyTime": "2026-06-21T16:43:54.000Z",
   "ndx": {
     "price": 30406.193,
     "prevClose": 26672.43,
@@ -167,5 +167,5 @@
     41.2249515625
   ],
   "dataSource": "yahoo-finance-server",
-  "updatedAt": "2026-06-21T18:24:02.454Z"
+  "updatedAt": "2026-06-21T20:43:54.149Z"
 }
