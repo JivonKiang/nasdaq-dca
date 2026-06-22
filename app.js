@@ -1953,7 +1953,92 @@ function renderTodayTab(data) {
         <strong>执行它，关掉软件。</strong>
       </div>
     </div>
+    ${renderTHSETFPanel(data)}
   `;
+}
+
+// ===== 同花顺纳指ETF折溢价面板 =====
+function renderTHSETFPanel(data) {
+  const ths = data.ths;
+  if (!ths || !ths.etfs || ths.etfs.length === 0) {
+    return '';
+  }
+
+  // 纳指基准价：优先用ths采集的纳指点位，否则用Yahoo的
+  const ndxPrice = ths.ndx_index?.price || data.ndx?.price;
+  if (!ndxPrice || ndxPrice <= 0) return '';
+
+  // ETF份额面值估算（中国ETF通常按1元面值，但纳指ETF清算时按净值）
+  // 纳指ETF通常跟踪Nasdaq-100，1份约等于纳指点位/某个系数
+  // 这里用最近一天净值估算折溢价
+  let rows = ths.etfs.map(etf => {
+    const price = parseFloat(etf.price) || 0;
+    const prevClose = parseFloat(etf.prev_close) || price;
+    const changePct = etf.change_pct ? parseFloat(etf.change_pct) : 0;
+    const changeSign = changePct >= 0 ? '+' : '';
+    const changeClass = changePct >= 0 ? 'green' : 'red';
+
+    // 折溢价估算：ETF价格 vs 纳指点位归一化
+    // 纳指ETF通常初始净值为1.00，跟踪纳指涨跌
+    // 简化模型：估算净值 = 1.00 * (ndxPrice / 基准纳指点位)
+    // 取各ETF上市日纳指点位作为基准
+    const baseNDX = getETFBaseNDX(etf.code);
+    const estNAV = baseNDX > 0 ? (1.0 * ndxPrice / baseNDX) : null;
+    const premium = estNAV ? ((price - estNAV) / estNAV * 100) : null;
+
+    let premiumHtml = '';
+    if (premium !== null) {
+      const pColor = Math.abs(premium) < 0.5 ? 'blue' : (premium > 0 ? 'red' : 'green');
+      const pSign = premium >= 0 ? '+' : '';
+      premiumHtml = `<span class="${pColor}" style="font-weight:600">${pSign}${premium.toFixed(2)}%</span>`;
+    } else {
+      premiumHtml = `<span style="color:var(--text-secondary)">--</span>`;
+    }
+
+    return `
+      <tr>
+        <td style="font-size:13px;white-space:nowrap;">${etf.name.replace('纳斯达克ETF', '纳指ETF').replace('纳指ETF', '').replace('100', '') || etf.code.slice(-4)}</td>
+        <td style="font-weight:600;">${price.toFixed(3)}</td>
+        <td class="${changeClass}" style="font-weight:500;">${changeSign}${changePct.toFixed(2)}%</td>
+        <td>${premiumHtml}</td>
+      </tr>`;
+  }).join('');
+
+  return `
+    <div class="card">
+      <div class="card-title"><span class="emoji">🏦</span>纳指ETF行情 <span style="font-size:11px;color:var(--text-secondary);margin-left:6px;">(同花顺)</span></div>
+      <div style="overflow-x:auto;">
+        <table style="width:100%;border-collapse:collapse;font-size:13px;">
+          <thead>
+            <tr style="border-bottom:1px solid var(--border-color);color:var(--text-secondary);font-size:11px;">
+              <th style="text-align:left;padding:6px 4px;">名称</th>
+              <th style="text-align:right;padding:6px 4px;">价格</th>
+              <th style="text-align:right;padding:6px 4px;">涨跌</th>
+              <th style="text-align:right;padding:6px 4px;">折溢价</th>
+            </tr>
+          </thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>
+      <div style="font-size:11px;color:var(--text-secondary);margin-top:8px;line-height:1.5;">
+        📌 折溢价 = (ETF市价 - 估算净值) / 估算净值 × 100%。仅供参考，实际以基金公司公告为准。
+      </div>
+    </div>`;
+}
+
+// 各ETF上市日对应纳指点位（用于估算净值基准）
+function getETFBaseNDX(code) {
+  const baselines = {
+    'USHJ513300': 17744,  // 华夏纳斯达克100ETF，上市日2023-01附近纳指约17744
+    'USHJ513110': 16534,  // 华泰柏瑞纳指100ETF
+    'USHJ513870': 16657,  // 富国纳指100ETF
+    'USHJ513390': 18100,  // 博时纳指100ETF
+    'USZJ159513': 20007,  // 大成纳斯达克100ETF
+    'USZJ159632': 19907,  // 华安纳斯达克ETF
+    'USZJ159659': 20020,  // 招商纳斯达克100ETF
+    'USZJ159501': 17034,  // 嘉实纳指ETF
+  };
+  return baselines[code] || 0;
 }
 
 function renderShortTermTab(data) {
