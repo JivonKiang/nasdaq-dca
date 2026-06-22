@@ -24,13 +24,25 @@ jobs:
         with:
           node-version: '20'
 
-      - name: 更新市场数据
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: 安装同花顺SDK
+        run: pip install thsdk
+
+      - name: 采集同花顺纳指ETF数据
+        run: python scripts/update-ths-cache.py
+        continue-on-error: true  # thsdk 游客账户可能不稳定，失败不阻塞主流程
+
+      - name: 更新Yahoo市场数据（含合并ths）
         run: node scripts/update-cache.js
 
       - name: 提交并推送缓存
         run: |
           git config user.name "nasdaq-dca-bot"
           git config user.email "nasdaq-dca-bot@users.noreply.github.com"
-          git add cache.json
+          git add cache.json ths-cache.json
           git diff --staged --quiet || git commit -m "🔄 自动更新市场数据 $(date -u '+%Y-%m-%d %H:%M UTC')"
           git push
