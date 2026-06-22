@@ -974,7 +974,7 @@ function generateMiniChart(recentCloses) {
   return `
     <div style="margin-top:12px;">
       <div style="font-size:11px;color:var(--text-muted);margin-bottom:4px;">近20日收盘价走势</div>
-      <svg width="100%" height="${height}" viewBox="0 0 ${width} ${height}" preserveAspectRatio="none" style="display:block;">
+      <svg width="100%" height="${height}" viewBox="0 0 ${width} ${height}" preserveAspectRatio="xMidYMid meet" style="display:block;max-width:100%;">
         <polyline
           points="${polylinePoints}"
           fill="none"
@@ -1768,20 +1768,7 @@ function renderTodayTab(data) {
     ${extremeWarning}
     ${consecutiveAlert}
 
-    <!-- 综合评分 -->
-    <div class="card" style="text-align:center;padding:20px 16px;">
-      <div style="font-size:12px;color:var(--text-muted);margin-bottom:8px;">📊 投资仪表盘综合评分</div>
-      <div style="font-size:48px;font-weight:800;color:${scoreColor};line-height:1;">${compositeScore}</div>
-      <div style="font-size:14px;color:${scoreColor};font-weight:600;margin-top:4px;">${scoreLabel}</div>
-      <div style="width:100%;height:6px;background:rgba(0,0,0,0.3);border-radius:3px;margin-top:12px;overflow:hidden;">
-        <div style="width:${compositeScore}%;height:100%;background:${scoreColor};border-radius:3px;transition:width 0.8s ease;"></div>
-      </div>
-      <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--text-muted);margin-top:4px;">
-        <span>0</span><span>25</span><span>50</span><span>75</span><span>100</span>
-      </div>
-    </div>
-
-    <!-- 操作指令 -->
+    <!-- 操作指令（首屏置顶） -->
     <div class="card action-card ${actionClass}">
       <div class="card-title"><span class="emoji">⚡</span>操作指令</div>
       <div class="action-amount ${grade.color}">${actionText}</div>
@@ -1790,8 +1777,18 @@ function renderTodayTab(data) {
         ${addResult.shouldAdd ? ` | 额外加仓 ${addResult.shares} 份` : ''}
       </div>
 
+      <!-- 综合评分（内嵌到操作卡片） -->
+      <div style="text-align:center;padding:12px 0;border-top:1px solid rgba(255,255,255,0.08);border-bottom:1px solid rgba(255,255,255,0.08);margin-bottom:12px;">
+        <div style="font-size:11px;color:var(--text-muted);margin-bottom:6px;">投资仪表盘综合评分</div>
+        <div style="font-size:36px;font-weight:800;color:${scoreColor};line-height:1;">${compositeScore}</div>
+        <div style="font-size:13px;color:${scoreColor};font-weight:600;">${scoreLabel}</div>
+        <div style="width:100%;height:5px;background:rgba(0,0,0,0.3);border-radius:3px;margin-top:8px;overflow:hidden;">
+          <div style="width:${compositeScore}%;height:100%;background:${scoreColor};border-radius:3px;transition:width 0.8s ease;"></div>
+        </div>
+      </div>
+
       <!-- 综合决策 -->
-      <div style="background:rgba(0,0,0,0.2);border-radius:8px;padding:12px;margin-top:8px;">
+      <div style="background:rgba(0,0,0,0.2);border-radius:8px;padding:12px;">
         <div style="font-size:12px;font-weight:700;color:var(--text-primary);margin-bottom:6px;">
           🎯 投资团队共识：${analysis.consensus.pauseCount}/${analysis.consensus.total} 视角建议暂停
         </div>
