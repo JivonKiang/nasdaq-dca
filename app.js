@@ -48,6 +48,7 @@ const DEFAULT_PROFILE = {
   frequency: 'weekly',
   method: 'pe-based',
   baseShares: 1,
+  amountPerShare: 1000,
   assetRatio: 1.0,
   holdings: 16,
   isDefault: true,
@@ -161,9 +162,10 @@ function syncUserSettingsFromProfile() {
     totalAssets: profile.assetRatio,
     weeklyBase: 1000,
     holdings: profile.holdings || 16,
-    frequency: profile.frequency,
+    frequency: profile.frequency || 'weekly',
     method: profile.method || 'pe-based',
     baseShares: profile.baseShares || 1,
+    amountPerShare: profile.amountPerShare || 1000,
   };
 }
 
@@ -176,6 +178,7 @@ function addProfile() {
     frequency: 'weekly',
     method: 'pe-based',
     baseShares: 1,
+    amountPerShare: 1000,
     assetRatio: 1.0,
     holdings: 16,
     isDefault: false,
@@ -226,6 +229,7 @@ function saveCurrentProfile() {
   profile.startDate = document.getElementById('profileStartDate').value || profile.startDate;
   profile.frequency = document.getElementById('profileFrequency').value;
   profile.baseShares = parseFloat(document.getElementById('profileBaseShares').value) || 1;
+  profile.amountPerShare = parseFloat(document.getElementById('profileAmountPerShare').value) || 1000;
   profile.assetRatio = parseFloat(document.getElementById('profileAssetRatio').value) || 1.0;
 
   saveProfiles();
@@ -255,6 +259,7 @@ function renderProfileUI() {
   document.getElementById('profileStartDate').value = profile.startDate;
   document.getElementById('profileFrequency').value = profile.frequency;
   document.getElementById('profileBaseShares').value = profile.baseShares;
+  document.getElementById('profileAmountPerShare').value = profile.amountPerShare || 1000;
   document.getElementById('profileAssetRatio').value = profile.assetRatio;
 
   // 更新Header角色名称
@@ -812,10 +817,24 @@ async function fetchAllMarketData() {
   const isTradingDay = dayOfWeek >= 1 && dayOfWeek <= 5;
   const isThursday = dayOfWeek === 4;
 
-  // 计算距周四天数
-  let daysToThursday = (4 - dayOfWeek + 7) % 7;
-  if (daysToThursday === 0 && isTradingDay) daysToThursday = 0;
-  else if (daysToThursday === 0) daysToThursday = 7;
+  // 根据定投频率判断是否为定投日
+  const frequency = (getCurrentProfile()).frequency || 'weekly';
+  let isDCAday = false;
+  if (frequency === 'daily') {
+    isDCAday = isTradingDay;
+  } else {
+    isDCAday = isThursday;
+  }
+
+  // 计算距下次定投日天数
+  let daysToDCA = 0;
+  if (frequency === 'daily') {
+    daysToDCA = isTradingDay ? 0 : (dayOfWeek === 0 ? 1 : (dayOfWeek === 6 ? 1 : 0));
+  } else {
+    daysToDCA = (4 - dayOfWeek + 7) % 7;
+    if (daysToDCA === 0 && isTradingDay) daysToDCA = 0;
+    else if (daysToDCA === 0) daysToDCA = 7;
+  }
 
   // 股债性价比（简化：美债收益率 vs 标普收益率倒数）
   const spyYield = spyMeta?.regularMarketPrice ? 1 / (spyMeta.regularMarketPrice / 100) : 0;
@@ -860,7 +879,9 @@ async function fetchAllMarketData() {
     // 日期信息
     isTradingDay: isTradingDay,
     isThursday: isThursday,
-    daysToThursday: daysToThursday,
+    isDCAday: isDCAday,
+    frequency: frequency,
+    daysToDCA: daysToDCA,
     dayOfWeek: dayOfWeek,
 
     // 历史PE
@@ -989,6 +1010,18 @@ function generateMiniChart(recentCloses) {
   `;
 }
 
+
+// ===== 金额格式化 =====
+function formatAmount(shares) {
+  const profile = getCurrentProfile();
+  const amountPerShare = profile.amountPerShare || 1000;
+  return Math.round(shares * amountPerShare);
+}
+
+function formatAmountStr(shares) {
+  return formatAmount(shares) + '元';
+}
+
 // ===== PE档位判定 =====
 function getPEGrade(pe) {
   if (pe <= 25) return { level: '加倍', shares: 2, class: 'buy-double', color: 'green' };
@@ -1001,8 +1034,15 @@ function getPEGrade(pe) {
 
 // ===== 加仓判定（三步法）=====
 function calculateAdditionalBuy(data) {
-  if (!data.isTradingDay || data.isThursday) {
-    return { shouldAdd: false, shares: 0, reason: data.isThursday ? '周四禁止加仓' : '今日非交易日' };
+  // 每日定投模式下无额外加仓，定投日本身就是买入日
+  if (!data.isTradingDay) {
+    return { shouldAdd: false, shares: 0, reason: '今日非交易日' };
+  }
+  if (data.frequency === 'daily') {
+    return { shouldAdd: false, shares: 0, reason: '每日定投模式，按PE档位自动执行' };
+  }
+  if (data.isThursday) {
+    return { shouldAdd: false, shares: 0, reason: '周四禁止加仓' };
   }
 
   const change = data.ndx.change; // 前一交易日涨跌幅
@@ -1018,13 +1058,13 @@ function calculateAdditionalBuy(data) {
     step1Reason = `前日涨跌幅${change >= 0 ? '+' : ''}${change.toFixed(2)}%，未触发加仓阈值`;
   } else if (change >= -4) {
     baseShares = 0.5;
-    step1Reason = `前日跌${change.toFixed(2)}%，触发0.5份档`;
+    step1Reason = `前日跌${change.toFixed(2)}%，触发0.5倍档`;
   } else if (change >= -7) {
     baseShares = 1;
-    step1Reason = `前日跌${change.toFixed(2)}%，触发1份档`;
+    step1Reason = `前日跌${change.toFixed(2)}%，触发1倍档`;
   } else {
     baseShares = 1;
-    step1Reason = `前日跌${change.toFixed(2)}%，触发1份档+极端超跌`;
+    step1Reason = `前日跌${change.toFixed(2)}%，触发1倍档+极端超跌`;
   }
 
   if (baseShares === 0) {
@@ -1119,10 +1159,10 @@ function calculateAdditionalBuy(data) {
       return {
         shouldAdd: false,
         shares: 0,
-        reason: step1Reason + '；' + step2Reason + '；本周已加仓' + weeklyAddTotal.toFixed(1) + '份，达周度上限1份',
+        reason: step1Reason + '；' + step2Reason + '；本周已加仓' + formatAmount(weeklyAddTotal) + '元，达周度上限' + formatAmount(1) + '元',
         step1: step1Reason,
         step2: step2Reason,
-        step3: '周度加仓上限已满（本周已加仓' + weeklyAddTotal.toFixed(1) + '份）',
+        step3: '周度加仓上限已满（本周已加仓' + formatAmount(weeklyAddTotal) + '元）',
       };
     }
   }
@@ -1142,7 +1182,7 @@ function calculateAdditionalBuy(data) {
         step1: step1Reason,
         step2: step2Reason,
         step3: eventReason,
-        warning: `连续${consecutiveAddDays}日加仓，强制降一档（${adjustedShares}→${downgradedShares}份）`,
+        warning: `连续${consecutiveAddDays}日加仓，强制降一档（${formatAmount(adjustedShares)}→${formatAmount(downgradedShares)}元）`,
       };
     }
   } else {
@@ -1669,12 +1709,12 @@ function renderTodayTab(data) {
 
   // 非交易日提示
   const nonTradingNote = !data.isTradingDay
-    ? `<div class="alert-banner info">📅 今日非交易日，下次操作窗口为周四（${data.daysToThursday}天后）</div>`
+    ? `<div class="alert-banner info">📅 今日非交易日，${data.frequency === "daily" ? "下次操作窗口为明日开盘" : `下次操作窗口为周四（${data.daysToDCA}天后）`}</div>`
     : '';
 
   // 周四提示
   const thursdayNote = data.isThursday
-    ? `<div class="alert-banner info">📌 今天是周四，执行定投日。全天禁止加仓。</div>`
+    ? `<div class="alert-banner info">📌 ${data.frequency === "daily" ? "今日为交易日，执行每日定投" : "今天是周四，执行定投日。全天禁止加仓"}</div>`
     : '';
 
   // 极端超跌警告
@@ -1758,8 +1798,8 @@ function renderTodayTab(data) {
   }).join('');
 
   // 操作指令大字显示
-  const totalShares = (grade.shares + (addResult.shouldAdd ? addResult.shares : 0)).toFixed(1);
-  const actionText = grade.shares === 0 ? '暂停定投' : `定投 ${totalShares} 份`;
+  const totalShares = grade.shares + (addResult.shouldAdd ? addResult.shares : 0);
+  const actionText = grade.shares === 0 ? '暂停定投' : `定投 ${formatAmount(totalShares)}元`;
   const actionClass = grade.class;
 
   tab.innerHTML = `
@@ -1771,10 +1811,10 @@ function renderTodayTab(data) {
     <!-- 操作指令（首屏置顶） -->
     <div class="card action-card ${actionClass}">
       <div class="card-title"><span class="emoji">⚡</span>操作指令</div>
-      <div class="action-amount ${grade.color}">${actionText}</div>
+      <div class="action-amount ${grade.color}" style="font-size:${actionText.length > 8 ? "28px" : "32px"};">${actionText}</div>
       <div style="text-align:center;font-size:12px;color:var(--text-muted);margin-bottom:12px;">
         PE=${pe.toFixed(1)}倍 → ${grade.level}档
-        ${addResult.shouldAdd ? ` | 额外加仓 ${addResult.shares} 份` : ''}
+        ${addResult.shouldAdd ? ` | 额外加仓 ${formatAmount(addResult.shares)}元` : ''}
       </div>
 
       <!-- 综合评分（内嵌到操作卡片） -->
@@ -1857,9 +1897,9 @@ function renderTodayTab(data) {
           <div class="data-sub">股债比: ${data.equityBondRatio}</div>
         </div>
         <div class="data-item">
-          <div class="data-label">距周四定投</div>
-          <div class="data-value">${data.daysToThursday}天</div>
-          <div class="data-sub">${data.isThursday ? '今天就是周四！' : data.isTradingDay ? '交易日' : '非交易日'}</div>
+          <div class="data-label">${data.frequency === "daily" ? "距下次定投" : "距周四定投"}</div>
+          <div class="data-value">${data.frequency === "daily" ? (data.isTradingDay ? "今天" : "明天") : data.daysToDCA + "天"}</div>
+          <div class="data-sub">${data.frequency === 'daily' ? (data.isTradingDay ? '今日定投日' : '非交易日') : (data.isThursday ? '今天就是周四！' : (data.isTradingDay ? '交易日' : '非交易日'))}</div>
         </div>
         <div class="data-item">
           <div class="data-label">20日均线</div>
@@ -1889,7 +1929,7 @@ function renderTodayTab(data) {
         纳指长期PE中枢约25-28倍。
         你每周定投占总资产仅<span class="${grade.color}" style="font-weight:700">${persuasion.weeklyRatio}%</span>，
         即便全亏也不影响生活。
-        ${persuasion.totalShares > 0 ? `你当前定投占总资产的<span class="${grade.color}" style="font-weight:700">${persuasion.investedRatio}%</span>，累计${persuasion.totalShares.toFixed(1)}份。` : ''}
+        ${persuasion.totalShares > 0 ? `你当前定投占总资产的<span class="${grade.color}" style="font-weight:700">${persuasion.investedRatio}%</span>，累计${formatAmount(persuasion.totalShares)}元。` : ''}
         <strong style="color:var(--text-primary)">浮亏是假的，份额是真的。</strong>
       </div>
     </div>
@@ -2082,7 +2122,7 @@ function renderMidTermTab(data) {
               <div class="data-grid">
                 <div class="data-item">
                   <div class="data-label">累计投入</div>
-                  <div class="data-value">${totalShares.toFixed(1)}份</div>
+                  <div class="data-value">${formatAmount(totalShares)}元</div>
                 </div>
                 <div class="data-item">
                   <div class="data-label">占总资产比</div>
@@ -2144,10 +2184,10 @@ function renderLongTermTab(data) {
     <div class="card">
       <div class="card-title"><span class="emoji">📜</span>定投铁律回顾</div>
       <div style="font-size:13px;line-height:2;color:var(--text-secondary)">
-        <div>1️⃣ 周四定投基准1份，按PE档位自动调整</div>
-        <div>2️⃣ 加仓仅限周一/二/三/五，单日封顶1份</div>
+        <div>1️⃣ 定投日基准金额，按PE档位自动调整</div>
+        <div>2️⃣ 加仓仅限周一/二/三/五，单日封顶基础金额</div>
         <div>3️⃣ PE&lt;25加倍 | 25-28为1.5倍 | 28-32正常 | 32-35半额 | 35-40最低 | &gt;40暂停</div>
-        <div>4️⃣ 跌2-4%加仓0.5份 | 跌≥4%加仓1份 | 跌≥7%极端超跌</div>
+        <div>4️⃣ 跌2-4%加仓0.5倍 | 跌≥4%加仓1倍 | 跌≥7%极端超跌</div>
         <div>5️⃣ 一级事件前1日、VIX&gt;30+周跌&gt;5%、年末季末 → 降一档</div>
         <div>6️⃣ 每周定投占总资产仅${persuasion.weeklyRatio}%，执行它，关掉软件</div>
       </div>
@@ -2193,7 +2233,7 @@ function renderHistoryTab() {
       <div class="data-grid" style="margin-bottom:12px;">
         <div class="data-item">
           <div class="data-label">累计投入</div>
-          <div class="data-value">${totalShares.toFixed(1)}份</div>
+          <div class="data-value">${formatAmount(totalShares)}元</div>
         </div>
         <div class="data-item">
           <div class="data-label">操作次数</div>
@@ -2204,7 +2244,7 @@ function renderHistoryTab() {
         <div class="history-item">
           <span class="history-date">${h.date}</span>
           <span class="history-action">${h.type}</span>
-          <span class="history-amount ${h.amount > 0 ? 'green' : 'muted'}">${h.amount > 0 ? '+' : ''}${(h.amount / 1000).toFixed(1)}份</span>
+          <span class="history-amount ${h.amount > 0 ? 'green' : 'muted'}">${h.amount > 0 ? '+' : ''}${h.amount}元</span>
         </div>
       `).join('')}
     </div>
@@ -2223,10 +2263,10 @@ function generateShortTermAdvice(data, addResult, trend) {
 
   // 今日操作
   if (data.isThursday) {
-    parts.push(`<strong class="${data.peGrade.color}">今天是定投日，执行${data.peGrade.shares}份定投。</strong>`);
+    parts.push(`<strong class="${data.peGrade.color}">今天是定投日，执行${formatAmount(data.peGrade.shares)}元定投。</strong>`);
   } else if (data.isTradingDay) {
     if (addResult.shouldAdd) {
-      parts.push(`<strong class="green">今日可加仓${addResult.shares}份。</strong>原因：${addResult.step1}`);
+      parts.push(`<strong class="green">今日可加仓${formatAmount(addResult.shares)}元。</strong>原因：${addResult.step1}`);
     } else {
       parts.push(`<strong class="muted">今日不加仓。</strong>${addResult.reason || ''}`);
     }
@@ -2272,11 +2312,11 @@ function generateMidTermAdvice(data, volatility, peTrend) {
 
   // 中期建议
   if (data.pe > 35) {
-    parts.push('当前PE偏高，中期建议维持最低档定投（0.3份），不额外加仓。等待估值回归后再加大投入。');
+    parts.push('当前PE偏高，中期建议维持最低档定投，不额外加仓。等待估值回归后再加大投入。');
   } else if (data.pe < 25) {
-    parts.push('当前PE处于低估区间，中期建议加倍定投（2份），积极收集廉价份额。这是超额收益的来源。');
+    parts.push('当前PE处于低估区间，中期建议加倍定投，积极收集廉价份额。这是超额收益的来源。');
   } else {
-    parts.push('当前PE处于合理区间，中期建议按正常档位（1份）定投，保持节奏。');
+    parts.push('当前PE处于合理区间，中期建议按正常档位定投，保持节奏。');
   }
 
   return parts.join('<br><br>');
@@ -2640,7 +2680,7 @@ function showAddRecordForm() {
         </select>
       </div>
       <div class="setting-group">
-        <div class="setting-label">份数</div>
+        <div class="setting-label">金额(元)</div>
         <input type="number" class="setting-input" id="manualRecordShares" value="1" step="0.1" min="0.1">
       </div>
       <div style="display:flex;gap:8px;">
