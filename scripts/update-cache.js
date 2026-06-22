@@ -194,8 +194,22 @@ async function main() {
       updatedAt: new Date().toISOString(),
     };
 
-    // 写入 cache.json
+    // 合并同花顺数据（ths-cache.json）
     const fs = require('fs');
+    const path = require('path');
+    const thsCachePath = path.join(__dirname, '..', 'ths-cache.json');
+    if (fs.existsSync(thsCachePath)) {
+      try {
+        const thsData = JSON.parse(fs.readFileSync(thsCachePath, 'utf-8'));
+        cache.ths = thsData;
+        cache.dataSource = 'yahoo-finance-server + thsdk';
+        console.log(`   ✅ 已合并同花顺数据：${thsData.etfs?.length || 0} 只纳指ETF`);
+      } catch (e) {
+        console.warn('   ⚠️ 同花顺数据合并失败:', e.message);
+      }
+    }
+
+    // 写入 cache.json
     fs.writeFileSync('cache.json', JSON.stringify(cache, null, 2));
 
     console.log(`✅ 缓存更新成功！`);
