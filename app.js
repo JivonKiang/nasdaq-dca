@@ -36,7 +36,6 @@ const CONFIG = {
 let userSettings = {
   startDate: '',
   totalAssets: 1.0,
-  weeklyBase: 1000,
   holdings: 16,
 };
 
@@ -47,8 +46,7 @@ const DEFAULT_PROFILE = {
   startDate: '2026-06-01',
   frequency: 'weekly',
   method: 'pe-based',
-  baseShares: 1,
-  amountPerShare: 1000,
+  baseAmount: 1000,
   assetRatio: 1.0,
   holdings: 16,
   isDefault: true,
@@ -160,12 +158,10 @@ function syncUserSettingsFromProfile() {
   userSettings = {
     startDate: profile.startDate,
     totalAssets: profile.assetRatio,
-    weeklyBase: 1000,
     holdings: profile.holdings || 16,
     frequency: profile.frequency || 'weekly',
     method: profile.method || 'pe-based',
-    baseShares: profile.baseShares || 1,
-    amountPerShare: profile.amountPerShare || 1000,
+    baseAmount: profile.baseAmount || 1000,
   };
 }
 
@@ -177,8 +173,7 @@ function addProfile() {
     startDate: new Date().toISOString().split('T')[0],
     frequency: 'weekly',
     method: 'pe-based',
-    baseShares: 1,
-    amountPerShare: 1000,
+    baseAmount: 1000,
     assetRatio: 1.0,
     holdings: 16,
     isDefault: false,
@@ -228,8 +223,7 @@ function saveCurrentProfile() {
   profile.name = document.getElementById('profileName').value || profile.name;
   profile.startDate = document.getElementById('profileStartDate').value || profile.startDate;
   profile.frequency = document.getElementById('profileFrequency').value;
-  profile.baseShares = parseFloat(document.getElementById('profileBaseShares').value) || 1;
-  profile.amountPerShare = parseFloat(document.getElementById('profileAmountPerShare').value) || 1000;
+  profile.baseAmount = parseFloat(document.getElementById('profileBaseAmount').value) || 1000;
   profile.assetRatio = parseFloat(document.getElementById('profileAssetRatio').value) || 1.0;
 
   saveProfiles();
@@ -258,8 +252,7 @@ function renderProfileUI() {
   document.getElementById('profileName').value = profile.name;
   document.getElementById('profileStartDate').value = profile.startDate;
   document.getElementById('profileFrequency').value = profile.frequency;
-  document.getElementById('profileBaseShares').value = profile.baseShares;
-  document.getElementById('profileAmountPerShare').value = profile.amountPerShare || 1000;
+  document.getElementById('profileBaseAmount').value = profile.baseAmount || 1000;
   document.getElementById('profileAssetRatio').value = profile.assetRatio;
 
   // 更新Header角色名称
@@ -1014,8 +1007,8 @@ function generateMiniChart(recentCloses) {
 // ===== 金额格式化 =====
 function formatAmount(shares) {
   const profile = getCurrentProfile();
-  const amountPerShare = profile.amountPerShare || 1000;
-  return Math.round(shares * amountPerShare);
+  const baseAmount = profile.baseAmount || 1000;
+  return Math.round(shares * baseAmount);
 }
 
 function formatAmountStr(shares) {
@@ -1338,12 +1331,10 @@ function analyzeTrend(data) {
 // ===== 数据说服 =====
 function generateDataPersuasion(data) {
   const pe = data.pe;
-  const assetRatio = userSettings.totalAssets; // 占比系数
-  const baseShares = userSettings.baseShares || 1;
-  // 兼容缓存数据中shares或amount字段
-  const weeklyShares = data.peGrade.shares || (data.peGrade.amount ? data.peGrade.amount / 1000 : baseShares);
-  // 每周定投占总资产比例 = baseShares * 0.15 * assetRatio
-  const weeklyRatio = (baseShares * 0.15 * assetRatio).toFixed(2);
+  const assetRatio = userSettings.totalAssets;
+  const baseAmount = userSettings.baseAmount || 1000;
+  const weeklyShares = data.peGrade.shares || (data.peGrade.amount ? data.peGrade.amount / 1000 : 1);
+  const weeklyRatio = (baseAmount / 1000 * weeklyShares * 0.15 * assetRatio).toFixed(2);
 
   // 历史定投收益概率（基于PE起点）
   let prob12m = '70%';
@@ -1372,7 +1363,7 @@ function generateDataPersuasion(data) {
   const totalShares = totalInvestedAmount / 1000;
   // 累计投入占总资产比例（用系数简化）
   const investedRatio = totalShares > 0
-    ? (baseShares * 0.15 * totalShares * assetRatio).toFixed(2)
+    ? (baseAmount / 1000 * 0.15 * totalShares * assetRatio).toFixed(2)
     : '0.00';
 
   return {
@@ -2563,7 +2554,7 @@ function recordTodayInvest(data) {
     records.push({
       date: today,
       type: '周四定投',
-      amount: grade.shares * userSettings.weeklyBase,
+      amount: grade.shares * userSettings.baseAmount,
       shares: grade.shares,
       pe: data.pe,
       ndx: data.ndx.price,
@@ -2576,7 +2567,7 @@ function recordTodayInvest(data) {
     records.push({
       date: today,
       type: '额外加仓',
-      amount: addResult.shares * userSettings.weeklyBase,
+      amount: addResult.shares * userSettings.baseAmount,
       shares: addResult.shares,
       pe: data.pe,
       ndx: data.ndx.price,
