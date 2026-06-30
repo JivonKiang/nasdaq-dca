@@ -1,6 +1,6 @@
 {
-  "timestamp": 1782793399129,
-  "nyTime": "2026-06-30T00:23:19.000Z",
+  "timestamp": 1782808540642,
+  "nyTime": "2026-06-30T04:35:40.000Z",
   "ndx": {
     "price": 29774.752,
     "prevClose": 27186.98,
@@ -104,13 +104,13 @@
     "color": "red",
     "cls": "buy-zero"
   },
-  "vix": 17.65,
+  "vix": 17.58,
   "vixRecent": [
-    19.489999771118164,
     18.6299991607666,
     18.889999389648438,
     18.40999984741211,
-    17.649999618530273
+    17.649999618530273,
+    17.579999923706055
   ],
   "treasury10y": 4.374,
   "equityBondRatio": "0.34",
@@ -162,20 +162,133 @@
     40.7198
   ],
   "dataSource": "yahoo-finance-server + thsdk",
-  "updatedAt": "2026-06-30T04:23:19.251Z",
+  "updatedAt": "2026-06-30T08:35:40.765Z",
   "ths": {
-    "timestamp": 1782793126436,
-    "updatedAt": "2026-06-30T04:18:46Z",
+    "timestamp": 1782808484260,
+    "updatedAt": "2026-06-30T08:34:44Z",
     "dataSource": "thsdk",
-    "etfs": [],
+    "etfs": [
+      {
+        "code": "USHJ513300",
+        "name": "纳斯达克ETF华夏",
+        "price": 2.704,
+        "open": null,
+        "high": 2.719,
+        "low": 2.696,
+        "prev_close": 2.668,
+        "change_pct": 1.3493,
+        "volume": 167643160,
+        "amount": 453800150,
+        "turnover_rate": 3.2288,
+        "amplitude": 0.8621
+      },
+      {
+        "code": "USHJ513110",
+        "name": "纳指ETF华泰柏瑞",
+        "price": 2.481,
+        "open": null,
+        "high": 2.488,
+        "low": 2.472,
+        "prev_close": 2.446,
+        "change_pct": 1.4309,
+        "volume": 164035050,
+        "amount": 406808850,
+        "turnover_rate": 7.6032,
+        "amplitude": 0.6541
+      },
+      {
+        "code": "USHJ513870",
+        "name": "纳指ETF富国",
+        "price": 2.067,
+        "open": null,
+        "high": 2.075,
+        "low": 2.061,
+        "prev_close": 2.039,
+        "change_pct": 1.3732,
+        "volume": 60782380,
+        "amount": 125650548,
+        "turnover_rate": 4.8561,
+        "amplitude": 0.6866
+      },
+      {
+        "code": "USHJ513390",
+        "name": "纳指100ETF博时",
+        "price": 2.435,
+        "open": null,
+        "high": 2.443,
+        "low": 2.429,
+        "prev_close": 2.402,
+        "change_pct": 1.3739,
+        "volume": 40310400,
+        "amount": 98128041,
+        "turnover_rate": 2.188,
+        "amplitude": 0.5828
+      },
+      {
+        "code": "USZJ159513",
+        "name": "纳斯达克100ETF大成",
+        "price": 1.813,
+        "open": null,
+        "high": 1.815,
+        "low": 1.804,
+        "prev_close": 1.785,
+        "change_pct": 1.5686,
+        "volume": 87089376,
+        "amount": 157589200,
+        "turnover_rate": 2.0293,
+        "amplitude": 0.6162
+      },
+      {
+        "code": "USZJ159632",
+        "name": "纳斯达克ETF华安",
+        "price": 2.461,
+        "open": null,
+        "high": 2.468,
+        "low": 2.449,
+        "prev_close": 2.419,
+        "change_pct": 1.7363,
+        "volume": 141019010,
+        "amount": 346470300,
+        "turnover_rate": 2.9144,
+        "amplitude": 0.7854
+      },
+      {
+        "code": "USZJ159659",
+        "name": "纳斯达克100ETF招商",
+        "price": 2.339,
+        "open": null,
+        "high": 2.347,
+        "low": 2.329,
+        "prev_close": 2.304,
+        "change_pct": 1.5191,
+        "volume": 230276500,
+        "amount": 538054510,
+        "turnover_rate": 5.2149,
+        "amplitude": 0.7813
+      },
+      {
+        "code": "USZJ159501",
+        "name": "纳指ETF嘉实",
+        "price": 2.077,
+        "open": null,
+        "high": 2.083,
+        "low": 2.06,
+        "prev_close": 2.047,
+        "change_pct": 1.4656,
+        "volume": 74184300,
+        "amount": 153932280,
+        "turnover_rate": 1.1564,
+        "amplitude": 1.1236
+      }
+    ],
     "ndx_index": {
       "code": "UNQQNDAQ",
       "name": "纳斯达克",
-      "price": 76.845,
+      "price": 76.86,
       "prev_close": 78.56,
       "open": 79.35,
       "high": 79.85,
-      "low": 76.76
+      "low": 77.01
     }
   }
 }
