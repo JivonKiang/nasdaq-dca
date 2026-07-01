@@ -1,6 +1,6 @@
 {
-  "timestamp": 1782942209954,
-  "updatedAt": "2026-07-01T21:43:29Z",
+  "timestamp": 1782948169029,
+  "updatedAt": "2026-07-01T23:22:49Z",
   "dataSource": "thsdk",
   "etfs": [
     {
@@ -14,7 +14,7 @@
       "change_pct": 0.2219,
       "volume": 134352030,
       "amount": 365607000,
-      "turnover_rate": 2.5872,
+      "turnover_rate": 2.5853,
       "amplitude": 1.5533
     },
     {
@@ -28,7 +28,7 @@
       "change_pct": 0.524,
       "volume": 123539544,
       "amount": 308533930,
-      "turnover_rate": 5.7236,
+      "turnover_rate": 5.7209,
       "amplitude": 1.1286
     },
     {
@@ -42,7 +42,7 @@
       "change_pct": 0.2419,
       "volume": 87616290,
       "amount": 182130240,
-      "turnover_rate": 6.9445,
+      "turnover_rate": 6.8899,
       "amplitude": 1.2579
     },
     {
@@ -56,7 +56,7 @@
       "change_pct": 0.2053,
       "volume": 51385200,
       "amount": 125726929,
-      "turnover_rate": 2.7891,
+      "turnover_rate": 2.7444,
       "amplitude": 1.3142
     },
     {
@@ -70,7 +70,7 @@
       "change_pct": 0.2758,
       "volume": 80447200,
       "amount": 146659730,
-      "turnover_rate": 1.8719,
+      "turnover_rate": 1.8693,
       "amplitude": 1.2686
     },
     {
@@ -84,7 +84,7 @@
       "change_pct": 0.3657,
       "volume": 177413070,
       "amount": 438566760,
-      "turnover_rate": 3.6658,
+      "turnover_rate": 3.665,
       "amplitude": 1.4222
     },
     {
@@ -98,7 +98,7 @@
       "change_pct": 0.3848,
       "volume": 133655879,
       "amount": 314655610,
-      "turnover_rate": 2.9862,
+      "turnover_rate": 2.9849,
       "amplitude": 1.2398
     },
     {
@@ -112,7 +112,7 @@
       "change_pct": 0.5778,
       "volume": 64195400,
       "amount": 134462310,
-      "turnover_rate": 0.9992,
+      "turnover_rate": 0.9976,
       "amplitude": 1.1074
     }
   ],
