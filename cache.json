@@ -1,6 +1,6 @@
 {
-  "timestamp": 1783112463476,
-  "nyTime": "2026-07-03T17:01:03.000Z",
+  "timestamp": 1783116720534,
+  "nyTime": "2026-07-03T18:12:00.000Z",
   "ndx": {
     "price": 29329.213,
     "prevClose": 27710.36,
@@ -165,10 +165,10 @@
     40.36336875
   ],
   "dataSource": "yahoo-finance-server + thsdk",
-  "updatedAt": "2026-07-03T21:01:03.580Z",
+  "updatedAt": "2026-07-03T22:12:00.651Z",
   "ths": {
-    "timestamp": 1783112432090,
-    "updatedAt": "2026-07-03T21:00:32Z",
+    "timestamp": 1783116710490,
+    "updatedAt": "2026-07-03T22:11:50Z",
     "dataSource": "thsdk",
     "etfs": [
       {
@@ -284,6 +284,14 @@
         "amplitude": 1.3599
       }
     ],
-    "ndx_index": null
+    "ndx_index": {
+      "code": "UNQQNDAQ",
+      "name": "纳斯达克",
+      "price": 84.66,
+      "prev_close": 82.73,
+      "open": 83.79,
+      "high": 84.87,
+      "low": 83.65
+    }
   }
 }
