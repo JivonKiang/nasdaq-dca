@@ -1,14 +1,14 @@
 {
-  "timestamp": 1783534626542,
-  "nyTime": "2026-07-08T14:17:06.000Z",
+  "timestamp": 1783540108315,
+  "nyTime": "2026-07-08T15:48:28.000Z",
   "ndx": {
-    "price": 29168.66,
+    "price": 29181.523,
     "prevClose": 29234.99,
-    "change": -0.22688565995747473,
-    "weeklyChange": -3.6585969698011636,
+    "change": -0.18288701313050063,
+    "weeklyChange": -3.6161116630651815,
     "high60d": 30660.599609375,
-    "drawdown": 4.865983145739962,
-    "ma20": 29598.2904296875,
+    "drawdown": 4.824030280617038,
+    "ma20": 29598.93359375,
     "ma20Direction": "down",
     "recentCloses": [
       29234.990234375,
@@ -51,7 +51,7 @@
       29329.2109375,
       29697.869140625,
       29173.01953125,
-      29168.66015625
+      29181.5234375
     ],
     "timestamps": [
       1778247000,
@@ -97,21 +97,21 @@
       1783517400
     ]
   },
-  "pe": 40.234928,
+  "pe": 40.2452184,
   "peGrade": {
     "name": "暂停",
     "amount": 0,
     "color": "red",
     "cls": "buy-zero"
   },
-  "vix": 16.76,
+  "vix": 16.86,
   "vixRecent": [
     16.149999618530273,
     15.569999694824219,
     16.1299991607666,
-    16.760000228881836
+    16.860000610351562
   ],
-  "treasury10y": 4.573,
+  "treasury10y": 4.569,
   "equityBondRatio": "0.33",
   "isTradingDay": true,
   "isThursday": false,
@@ -158,136 +158,15 @@
     40.36336875,
     40.6582953125,
     40.238415625,
-    40.234928124999996
+    40.24521875
   ],
   "dataSource": "yahoo-finance-server + thsdk",
-  "updatedAt": "2026-07-08T18:17:06.674Z",
+  "updatedAt": "2026-07-08T19:48:28.432Z",
   "ths": {
-    "timestamp": 1783534567202,
-    "updatedAt": "2026-07-08T18:16:07Z",
+    "timestamp": 1783540024449,
+    "updatedAt": "2026-07-08T19:47:04Z",
     "dataSource": "thsdk",
-    "etfs": [
-      {
-        "code": "USHJ513300",
-        "name": "纳斯达克ETF华夏",
-        "price": 2.631,
-        "open": null,
-        "high": 2.663,
-        "low": 2.63,
-        "prev_close": 2.668,
-        "change_pct": -1.3868,
-        "volume": 93162036,
-        "amount": 246825520,
-        "turnover_rate": 1.7919,
-        "amplitude": 1.2369
-      },
-      {
-        "code": "USHJ513110",
-        "name": "纳指ETF华泰柏瑞",
-        "price": 2.405,
-        "open": null,
-        "high": 2.43,
-        "low": 2.405,
-        "prev_close": 2.438,
-        "change_pct": -1.3536,
-        "volume": 65506500,
-        "amount": 158458390,
-        "turnover_rate": 3.0293,
-        "amplitude": 1.0254
-      },
-      {
-        "code": "USHJ513870",
-        "name": "纳指ETF富国",
-        "price": 1.994,
-        "open": null,
-        "high": 2.018,
-        "low": 1.993,
-        "prev_close": 2.027,
-        "change_pct": -1.628,
-        "volume": 124376850,
-        "amount": 249354470,
-        "turnover_rate": 9.5552,
-        "amplitude": 1.2333
-      },
-      {
-        "code": "USHJ513390",
-        "name": "纳指100ETF博时",
-        "price": 2.346,
-        "open": null,
-        "high": 2.375,
-        "low": 2.345,
-        "prev_close": 2.385,
-        "change_pct": -1.6352,
-        "volume": 201817590,
-        "amount": 476169020,
-        "turnover_rate": 10.2843,
-        "amplitude": 1.2579
-      },
-      {
-        "code": "USZJ159513",
-        "name": "纳斯达克100ETF大成",
-        "price": 1.752,
-        "open": null,
-        "high": 1.772,
-        "low": 1.748,
-        "prev_close": 1.774,
-        "change_pct": -1.2401,
-        "volume": 80137626,
-        "amount": 141040630,
-        "turnover_rate": 1.8544,
-        "amplitude": 1.3529
-      },
-      {
-        "code": "USZJ159632",
-        "name": "纳斯达克ETF华安",
-        "price": 2.376,
-        "open": null,
-        "high": 2.404,
-        "low": 2.373,
-        "prev_close": 2.413,
-        "change_pct": -1.5334,
-        "volume": 152478600,
-        "amount": 364204810,
-        "turnover_rate": 3.1473,
-        "amplitude": 1.2847
-      },
-      {
-        "code": "USZJ159659",
-        "name": "纳斯达克100ETF招商",
-        "price": 2.268,
-        "open": null,
-        "high": 2.294,
-        "low": 2.268,
-        "prev_close": 2.3,
-        "change_pct": -1.3913,
-        "volume": 87044400,
-        "amount": 198477380,
-        "turnover_rate": 1.9413,
-        "amplitude": 1.1304
-      },
-      {
-        "code": "USZJ159501",
-        "name": "纳指ETF嘉实",
-        "price": 2.033,
-        "open": null,
-        "high": 2.051,
-        "low": 2.033,
-        "prev_close": 2.051,
-        "change_pct": -0.8776,
-        "volume": 51610300,
-        "amount": 105192042,
-        "turnover_rate": 0.7983,
-        "amplitude": 0.8776
-      }
-    ],
-    "ndx_index": {
-      "code": "UNQQNDAQ",
-      "name": "纳斯达克",
-      "price": 85.08,
-      "prev_close": 86.43,
-      "open": 85.32,
-      "high": 85.615,
-      "low": 84.48
-    }
+    "etfs": [],
+    "ndx_index": null
   }
 }
