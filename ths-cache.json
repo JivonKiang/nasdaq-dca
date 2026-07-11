@@ -1,6 +1,6 @@
 {
-  "timestamp": 1783724777442,
-  "updatedAt": "2026-07-10T23:06:17Z",
+  "timestamp": 1783740668978,
+  "updatedAt": "2026-07-11T03:31:08Z",
   "dataSource": "thsdk",
   "etfs": [
     {
@@ -122,7 +122,7 @@
     "price": 88.08,
     "prev_close": 87.52,
     "open": 88.59,
-    "high": 89.37,
+    "high": 89.38,
     "low": 87.46
   }
 }
