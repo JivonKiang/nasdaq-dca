@@ -1,6 +1,6 @@
 {
-  "timestamp": 1783969415958,
-  "updatedAt": "2026-07-13T19:03:35Z",
+  "timestamp": 1783974027958,
+  "updatedAt": "2026-07-13T20:20:27Z",
   "dataSource": "thsdk",
   "etfs": [
     {
@@ -14,7 +14,7 @@
       "change_pct": -0.7853,
       "volume": 100128000,
       "amount": 266444200,
-      "turnover_rate": 1.9248,
+      "turnover_rate": 1.9251,
       "amplitude": 1.1593
     },
     {
@@ -28,7 +28,7 @@
       "change_pct": -0.7377,
       "volume": 69550800,
       "amount": 169041870,
-      "turnover_rate": 3.2104,
+      "turnover_rate": 3.2119,
       "amplitude": 0.9016
     },
     {
@@ -42,7 +42,7 @@
       "change_pct": -0.7407,
       "volume": 82929300,
       "amount": 167217460,
-      "turnover_rate": 6.181,
+      "turnover_rate": 6.2275,
       "amplitude": 0.9383
     },
     {
@@ -56,7 +56,7 @@
       "change_pct": -0.6711,
       "volume": 87752100,
       "amount": 208308250,
-      "turnover_rate": 4.3284,
+      "turnover_rate": 4.3391,
       "amplitude": 1.7617
     },
     {
@@ -70,7 +70,7 @@
       "change_pct": -0.8432,
       "volume": 74211884,
       "amount": 131261126,
-      "turnover_rate": 1.7078,
+      "turnover_rate": 1.7101,
       "amplitude": 0.9556
     },
     {
@@ -84,7 +84,7 @@
       "change_pct": -0.7457,
       "volume": 84060400,
       "amount": 202136960,
-      "turnover_rate": 1.7322,
+      "turnover_rate": 1.7329,
       "amplitude": 0.8699
     },
     {
@@ -98,7 +98,7 @@
       "change_pct": -0.5652,
       "volume": 78418600,
       "amount": 179823870,
-      "turnover_rate": 1.7458,
+      "turnover_rate": 1.7466,
       "amplitude": 0.8261
     },
     {
@@ -112,14 +112,14 @@
       "change_pct": -0.4384,
       "volume": 53396100,
       "amount": 109424621,
-      "turnover_rate": 0.8208,
+      "turnover_rate": 0.8221,
       "amplitude": 0.8768
     }
   ],
   "ndx_index": {
     "code": "UNQQNDAQ",
     "name": "纳斯达克",
-    "price": 89.18,
+    "price": 89.21,
     "prev_close": 88.08,
     "open": 88.95,
     "high": 89.42,
