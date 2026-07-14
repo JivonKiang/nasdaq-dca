@@ -1,6 +1,6 @@
 {
-  "timestamp": 1784046102099,
-  "updatedAt": "2026-07-14T16:21:42Z",
+  "timestamp": 1784050434102,
+  "updatedAt": "2026-07-14T17:33:54Z",
   "dataSource": "thsdk",
   "etfs": [
     {
@@ -14,7 +14,7 @@
       "change_pct": 0.2639,
       "volume": 125761538,
       "amount": 331927650,
-      "turnover_rate": 2.4176,
+      "turnover_rate": 2.4159,
       "amplitude": 1.6208
     },
     {
@@ -28,7 +28,7 @@
       "change_pct": 0.578,
       "volume": 69311900,
       "amount": 167256220,
-      "turnover_rate": 3.1994,
+      "turnover_rate": 3.1979,
       "amplitude": 1.8993
     },
     {
@@ -42,7 +42,7 @@
       "change_pct": 0.199,
       "volume": 94987700,
       "amount": 189800940,
-      "turnover_rate": 7.0798,
+      "turnover_rate": 7.0745,
       "amplitude": 1.592
     },
     {
@@ -56,7 +56,7 @@
       "change_pct": 0.1689,
       "volume": 136687550,
       "amount": 321422380,
-      "turnover_rate": 6.7421,
+      "turnover_rate": 6.7388,
       "amplitude": 1.8159
     },
     {
@@ -70,7 +70,7 @@
       "change_pct": 0.1701,
       "volume": 80412000,
       "amount": 141004090,
-      "turnover_rate": 1.8504,
+      "turnover_rate": 1.8479,
       "amplitude": 1.5306
     },
     {
@@ -84,7 +84,7 @@
       "change_pct": 0.2504,
       "volume": 134710300,
       "amount": 321160810,
-      "turnover_rate": 2.776,
+      "turnover_rate": 2.7748,
       "amplitude": 1.7529
     },
     {
@@ -98,7 +98,7 @@
       "change_pct": 0.1749,
       "volume": 85549646,
       "amount": 194806430,
-      "turnover_rate": 1.9046,
+      "turnover_rate": 1.9037,
       "amplitude": 1.4429
     },
     {
@@ -112,14 +112,14 @@
       "change_pct": 0.0489,
       "volume": 58126000,
       "amount": 118060877,
-      "turnover_rate": 0.8936,
+      "turnover_rate": 0.8922,
       "amplitude": 1.0763
     }
   ],
   "ndx_index": {
     "code": "UNQQNDAQ",
     "name": "纳斯达克",
-    "price": 87.955,
+    "price": 88.51,
     "prev_close": 89.21,
     "open": 87.75,
     "high": 89.14,
