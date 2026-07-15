@@ -1,6 +1,6 @@
 {
-  "timestamp": 1784107078306,
-  "nyTime": "2026-07-15T05:17:58.000Z",
+  "timestamp": 1784115719148,
+  "nyTime": "2026-07-15T07:41:59.000Z",
   "ndx": {
     "price": 29586.287,
     "prevClose": 29580.3,
@@ -100,12 +100,12 @@
     "color": "red",
     "cls": "buy-zero"
   },
-  "vix": 16.22,
+  "vix": 16.36,
   "vixRecent": [
     15.84000015258789,
     15.029999732971191,
     17.15999984741211,
-    16.219999313354492
+    16.360000610351562
   ],
   "treasury10y": 4.585,
   "equityBondRatio": "0.33",
@@ -155,10 +155,10 @@
     40.311279687500004
   ],
   "dataSource": "yahoo-finance-server + thsdk",
-  "updatedAt": "2026-07-15T09:17:58.549Z",
+  "updatedAt": "2026-07-15T11:41:59.437Z",
   "ths": {
-    "timestamp": 1784107066952,
-    "updatedAt": "2026-07-15T09:17:46Z",
+    "timestamp": 1784115705393,
+    "updatedAt": "2026-07-15T11:41:45Z",
     "dataSource": "thsdk",
     "etfs": [
       {
