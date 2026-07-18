@@ -1,6 +1,6 @@
 {
-  "timestamp": 1784402159780,
-  "nyTime": "2026-07-18T15:15:59.000Z",
+  "timestamp": 1784408453601,
+  "nyTime": "2026-07-18T17:00:53.000Z",
   "ndx": {
     "price": 28592.658,
     "prevClose": 29125.2,
@@ -165,10 +165,10 @@
     39.774128125000004
   ],
   "dataSource": "yahoo-finance-server + thsdk",
-  "updatedAt": "2026-07-18T19:16:00.109Z",
+  "updatedAt": "2026-07-18T21:00:53.836Z",
   "ths": {
-    "timestamp": 1784402150063,
-    "updatedAt": "2026-07-18T19:15:50Z",
+    "timestamp": 1784408426702,
+    "updatedAt": "2026-07-18T21:00:26Z",
     "dataSource": "thsdk",
     "etfs": [
       {
@@ -184,48 +184,6 @@
         "amount": 754584450,
         "turnover_rate": 5.6031,
         "amplitude": 2.6306
-      },
-      {
-        "code": "USHJ513110",
-        "name": "纳指ETF华泰柏瑞",
-        "price": 2.352,
-        "open": null,
-        "high": 2.408,
-        "low": 2.348,
-        "prev_close": 2.435,
-        "change_pct": -3.4086,
-        "volume": 110600200,
-        "amount": 261731570,
-        "turnover_rate": 5.0958,
-        "amplitude": 2.4641
-      },
-      {
-        "code": "USHJ513870",
-        "name": "纳指ETF富国",
-        "price": 1.957,
-        "open": null,
-        "high": 1.994,
-        "low": 1.956,
-        "prev_close": 2.022,
-        "change_pct": -3.2146,
-        "volume": 82048113,
-        "amount": 161683610,
-        "turnover_rate": 6.0972,
-        "amplitude": 1.8793
-      },
-      {
-        "code": "USHJ513390",
-        "name": "纳指100ETF博时",
-        "price": 2.298,
-        "open": null,
-        "high": 2.338,
-        "low": 2.293,
-        "prev_close": 2.377,
-        "change_pct": -3.3235,
-        "volume": 111178913,
-        "amount": 257094310,
-        "turnover_rate": 5.4731,
-        "amplitude": 1.8931
       },
       {
         "code": "USZJ159513",
