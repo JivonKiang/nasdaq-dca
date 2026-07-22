@@ -1,6 +1,6 @@
 {
-  "timestamp": 1784744107182,
-  "updatedAt": "2026-07-22T18:15:07Z",
+  "timestamp": 1784747353340,
+  "updatedAt": "2026-07-22T19:09:13Z",
   "dataSource": "thsdk",
   "etfs": [
     {
@@ -14,7 +14,7 @@
       "change_pct": -0.3833,
       "volume": 145857590,
       "amount": 381712010,
-      "turnover_rate": 2.7898,
+      "turnover_rate": 2.7918,
       "amplitude": 1.3415
     },
     {
@@ -28,7 +28,7 @@
       "change_pct": -0.2504,
       "volume": 53182800,
       "amount": 127866456,
-      "turnover_rate": 2.4469,
+      "turnover_rate": 2.4481,
       "amplitude": 1.0017
     },
     {
@@ -42,7 +42,7 @@
       "change_pct": -0.3502,
       "volume": 45582900,
       "amount": 91353203,
-      "turnover_rate": 3.3798,
+      "turnover_rate": 3.3823,
       "amplitude": 1.0505
     },
     {
@@ -56,7 +56,7 @@
       "change_pct": -0.2562,
       "volume": 84291400,
       "amount": 197996610,
-      "turnover_rate": 4.1352,
+      "turnover_rate": 4.1454,
       "amplitude": 1.0675
     },
     {
@@ -70,7 +70,7 @@
       "change_pct": -0.3442,
       "volume": 77165300,
       "amount": 134786480,
-      "turnover_rate": 1.7587,
+      "turnover_rate": 1.7611,
       "amplitude": 1.0901
     },
     {
@@ -84,7 +84,7 @@
       "change_pct": -0.2533,
       "volume": 120401500,
       "amount": 286073200,
-      "turnover_rate": 2.4699,
+      "turnover_rate": 2.4719,
       "amplitude": 1.0131
     },
     {
@@ -98,7 +98,7 @@
       "change_pct": -0.3095,
       "volume": 92526100,
       "amount": 209837300,
-      "turnover_rate": 2.0535,
+      "turnover_rate": 2.0544,
       "amplitude": 1.1494
     },
     {
@@ -112,17 +112,17 @@
       "change_pct": -0.1993,
       "volume": 45838700,
       "amount": 92239744,
-      "turnover_rate": 0.6972,
+      "turnover_rate": 0.6982,
       "amplitude": 1.0962
     }
   ],
   "ndx_index": {
     "code": "UNQQNDAQ",
     "name": "纳斯达克",
-    "price": 90.78,
+    "price": 90.47,
     "prev_close": 90.24,
     "open": 90.78,
     "high": 91.86,
-    "low": 90.57
+    "low": 90.37
   }
 }
