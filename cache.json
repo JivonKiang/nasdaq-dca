@@ -1,17 +1,16 @@
 {
-  "timestamp": 1784747362059,
-  "nyTime": "2026-07-22T15:09:22.000Z",
+  "timestamp": 1784751438029,
+  "nyTime": "2026-07-22T16:17:18.000Z",
   "ndx": {
-    "price": 29079.46,
+    "price": 28998.1,
     "prevClose": 29481.64,
-    "change": -1.3641710569696948,
-    "weeklyChange": -1.4342451681462687,
+    "change": -1.640139422365923,
+    "weeklyChange": -1.7100174766114078,
     "high60d": 30660.599609375,
-    "drawdown": 5.156910267637233,
-    "ma20": 29372.70048828125,
+    "drawdown": 5.422267113349812,
+    "ma20": 29368.632421875,
     "ma20Direction": "down",
     "recentCloses": [
-      29481.640625,
       30001.3203125,
       29973.5703125,
       30223.890625,
@@ -51,10 +50,9 @@
       28592.66015625,
       28604.23046875,
       29155.1796875,
-      29079.4609375
+      28998.099609375
     ],
     "timestamps": [
-      1779456600,
       1779802200,
       1779888600,
       1779975000,
@@ -97,29 +95,28 @@
       1784727000
     ]
   },
-  "pe": 40.163568,
+  "pe": 40.098479999999995,
   "peGrade": {
     "name": "暂停",
     "amount": 0,
     "color": "red",
     "cls": "buy-zero"
   },
-  "vix": 16.89,
+  "vix": 19.49,
   "vixRecent": [
     16.729999542236328,
     18.770000457763672,
     18.649999618530273,
     17.049999237060547,
-    16.889999389648438
+    19.489999771118164
   ],
-  "treasury10y": 4.654,
+  "treasury10y": 4.657,
   "equityBondRatio": "0.32",
   "isTradingDay": true,
   "isThursday": false,
   "daysToThursday": 1,
   "dayOfWeek": 3,
   "historicalPE": [
-    40.4853125,
     40.90105625,
     40.87885625,
     41.0791125,
@@ -159,13 +156,13 @@
     39.774128125000004,
     39.783384375,
     40.22414375,
-    40.16356875
+    40.0984796875
   ],
   "dataSource": "yahoo-finance-server + thsdk",
-  "updatedAt": "2026-07-22T19:09:22.272Z",
+  "updatedAt": "2026-07-22T20:17:18.200Z",
   "ths": {
-    "timestamp": 1784747353340,
-    "updatedAt": "2026-07-22T19:09:13Z",
+    "timestamp": 1784751427516,
+    "updatedAt": "2026-07-22T20:17:07Z",
     "dataSource": "thsdk",
     "etfs": [
       {
@@ -179,7 +176,7 @@
         "change_pct": -0.3833,
         "volume": 145857590,
         "amount": 381712010,
-        "turnover_rate": 2.7918,
+        "turnover_rate": 2.7898,
         "amplitude": 1.3415
       },
       {
@@ -193,7 +190,7 @@
         "change_pct": -0.2504,
         "volume": 53182800,
         "amount": 127866456,
-        "turnover_rate": 2.4481,
+        "turnover_rate": 2.4469,
         "amplitude": 1.0017
       },
       {
@@ -207,7 +204,7 @@
         "change_pct": -0.3502,
         "volume": 45582900,
         "amount": 91353203,
-        "turnover_rate": 3.3823,
+        "turnover_rate": 3.3798,
         "amplitude": 1.0505
       },
       {
@@ -221,7 +218,7 @@
         "change_pct": -0.2562,
         "volume": 84291400,
         "amount": 197996610,
-        "turnover_rate": 4.1454,
+        "turnover_rate": 4.1352,
         "amplitude": 1.0675
       },
       {
@@ -235,7 +232,7 @@
         "change_pct": -0.3442,
         "volume": 77165300,
         "amount": 134786480,
-        "turnover_rate": 1.7611,
+        "turnover_rate": 1.7587,
         "amplitude": 1.0901
       },
       {
@@ -249,7 +246,7 @@
         "change_pct": -0.2533,
         "volume": 120401500,
         "amount": 286073200,
-        "turnover_rate": 2.4719,
+        "turnover_rate": 2.4699,
         "amplitude": 1.0131
       },
       {
@@ -263,7 +260,7 @@
         "change_pct": -0.3095,
         "volume": 92526100,
         "amount": 209837300,
-        "turnover_rate": 2.0544,
+        "turnover_rate": 2.0535,
         "amplitude": 1.1494
       },
       {
@@ -277,18 +274,18 @@
         "change_pct": -0.1993,
         "volume": 45838700,
         "amount": 92239744,
-        "turnover_rate": 0.6982,
+        "turnover_rate": 0.6972,
         "amplitude": 1.0962
       }
     ],
     "ndx_index": {
       "code": "UNQQNDAQ",
       "name": "纳斯达克",
-      "price": 90.47,
+      "price": 90.9,
       "prev_close": 90.24,
       "open": 90.78,
       "high": 91.86,
-      "low": 90.37
+      "low": 90.25
     }
   }
 }
