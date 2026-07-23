@@ -1,14 +1,14 @@
 {
-  "timestamp": 1784828409012,
-  "nyTime": "2026-07-23T13:40:09.000Z",
+  "timestamp": 1784829745186,
+  "nyTime": "2026-07-23T14:02:25.000Z",
   "ndx": {
-    "price": 28430.547,
+    "price": 28404.883,
     "prevClose": 29481.64,
-    "change": -3.5652460310891825,
-    "weeklyChange": -2.0506692530896284,
+    "change": -3.6522968193085523,
+    "weeklyChange": -2.1390872361938023,
     "high60d": 30660.599609375,
-    "drawdown": 7.273349633687936,
-    "ma20": 29329.15673828125,
+    "drawdown": 7.357053150014961,
+    "ma20": 29327.87353515625,
     "ma20Direction": "down",
     "recentCloses": [
       30001.3203125,
@@ -51,7 +51,7 @@
       28604.23046875,
       29155.1796875,
       28998.099609375,
-      28430.546875
+      28404.8828125
     ],
     "timestamps": [
       1779802200,
@@ -97,22 +97,22 @@
       1784813400
     ]
   },
-  "pe": 39.6444376,
+  "pe": 39.6239064,
   "peGrade": {
     "name": "最低",
     "amount": 300,
     "color": "orange",
     "cls": "buy-min"
   },
-  "vix": 19.22,
+  "vix": 19.35,
   "vixRecent": [
     18.770000457763672,
     18.649999618530273,
     17.049999237060547,
     16.639999389648438,
-    19.219999313354492
+    19.350000381469727
   ],
-  "treasury10y": 4.699,
+  "treasury10y": 4.703,
   "equityBondRatio": "0.32",
   "isTradingDay": true,
   "isThursday": true,
@@ -159,13 +159,13 @@
     39.783384375,
     40.22414375,
     40.0984796875,
-    39.6444375
+    39.623906250000005
   ],
   "dataSource": "yahoo-finance-server + thsdk",
-  "updatedAt": "2026-07-23T17:40:09.130Z",
+  "updatedAt": "2026-07-23T18:02:25.464Z",
   "ths": {
-    "timestamp": 1784828398489,
-    "updatedAt": "2026-07-23T17:39:58Z",
+    "timestamp": 1784829735918,
+    "updatedAt": "2026-07-23T18:02:15Z",
     "dataSource": "thsdk",
     "etfs": [
       {
@@ -179,7 +179,7 @@
         "change_pct": 0.0385,
         "volume": 107248200,
         "amount": 279327850,
-        "turnover_rate": 2.0514,
+        "turnover_rate": 2.0499,
         "amplitude": 0.808
       },
       {
@@ -193,7 +193,7 @@
         "change_pct": -0.0418,
         "volume": 51770400,
         "amount": 123855326,
-        "turnover_rate": 2.382,
+        "turnover_rate": 2.3809,
         "amplitude": 0.8787
       },
       {
@@ -207,7 +207,7 @@
         "change_pct": -0.1004,
         "volume": 35270400,
         "amount": 70372086,
-        "turnover_rate": 2.6152,
+        "turnover_rate": 2.6133,
         "amplitude": 0.9036
       },
       {
@@ -221,7 +221,7 @@
         "change_pct": -0.0856,
         "volume": 60887600,
         "amount": 142376490,
-        "turnover_rate": 2.9871,
+        "turnover_rate": 2.9798,
         "amplitude": 0.8562
       },
       {
@@ -235,7 +235,7 @@
         "change_pct": 0,
         "volume": 54530700,
         "amount": 94835616,
-        "turnover_rate": 1.2429,
+        "turnover_rate": 1.2412,
         "amplitude": 0.806
       },
       {
@@ -249,7 +249,7 @@
         "change_pct": 0,
         "volume": 72318361,
         "amount": 171132690,
-        "turnover_rate": 1.4835,
+        "turnover_rate": 1.4823,
         "amplitude": 0.8887
       },
       {
@@ -263,7 +263,7 @@
         "change_pct": 0,
         "volume": 49652100,
         "amount": 112132423,
-        "turnover_rate": 1.102,
+        "turnover_rate": 1.1015,
         "amplitude": 0.7982
       },
       {
@@ -277,14 +277,14 @@
         "change_pct": -0.0999,
         "volume": 35664200,
         "amount": 71507664,
-        "turnover_rate": 0.5424,
+        "turnover_rate": 0.5416,
         "amplitude": 0.8487
       }
     ],
     "ndx_index": {
       "code": "UNQQNDAQ",
       "name": "纳斯达克",
-      "price": 91.67,
+      "price": 91.71,
       "prev_close": 90.9,
       "open": 93.055,
       "high": 93.575,
