@@ -1,6 +1,6 @@
 {
-  "timestamp": 1784915969978,
-  "updatedAt": "2026-07-24T17:59:29Z",
+  "timestamp": 1784917457861,
+  "updatedAt": "2026-07-24T18:24:17Z",
   "dataSource": "thsdk",
   "etfs": [
     {
@@ -70,7 +70,7 @@
       "change_pct": -1.3817,
       "volume": 59658418,
       "amount": 102132508,
-      "turnover_rate": 1.3579,
+      "turnover_rate": 1.356,
       "amplitude": 0.5181
     },
     {
@@ -84,7 +84,7 @@
       "change_pct": -1.3965,
       "volume": 104378342,
       "amount": 243158950,
-      "turnover_rate": 2.1395,
+      "turnover_rate": 2.1377,
       "amplitude": 0.5501
     },
     {
@@ -98,7 +98,7 @@
       "change_pct": -1.4191,
       "volume": 85720835,
       "amount": 190471110,
-      "turnover_rate": 1.9016,
+      "turnover_rate": 1.9008,
       "amplitude": 0.5322
     },
     {
@@ -112,14 +112,14 @@
       "change_pct": -1.0495,
       "volume": 45383900,
       "amount": 89761606,
-      "turnover_rate": 0.6892,
+      "turnover_rate": 0.6882,
       "amplitude": 0.9995
     }
   ],
   "ndx_index": {
     "code": "UNQQNDAQ",
     "name": "纳斯达克",
-    "price": 92.655,
+    "price": 92.71,
     "prev_close": 90.42,
     "open": 91.48,
     "high": 92.93,
