@@ -1,6 +1,6 @@
 {
-  "timestamp": 1785183579173,
-  "nyTime": "2026-07-27T16:19:39.000Z",
+  "timestamp": 1785187155682,
+  "nyTime": "2026-07-27T17:19:15.000Z",
   "ndx": {
     "price": 28039.21,
     "prevClose": 29973.57,
@@ -102,12 +102,12 @@
     "color": "orange",
     "cls": "buy-min"
   },
-  "vix": 18.74,
+  "vix": 18.67,
   "vixRecent": [
     17.049999237060547,
     16.639999389648438,
     18.700000762939453,
-    18.739999771118164
+    18.670000076293945
   ],
   "treasury10y": 4.641,
   "equityBondRatio": "0.32",
@@ -158,10 +158,10 @@
     39.33136875
   ],
   "dataSource": "yahoo-finance-server + thsdk",
-  "updatedAt": "2026-07-27T20:19:39.281Z",
+  "updatedAt": "2026-07-27T21:19:15.843Z",
   "ths": {
-    "timestamp": 1785183570454,
-    "updatedAt": "2026-07-27T20:19:30Z",
+    "timestamp": 1785187146574,
+    "updatedAt": "2026-07-27T21:19:06Z",
     "dataSource": "thsdk",
     "etfs": [
       {
@@ -175,7 +175,7 @@
         "change_pct": 0.8956,
         "volume": 90369520,
         "amount": 233440450,
-        "turnover_rate": 1.726,
+        "turnover_rate": 1.7248,
         "amplitude": 0.8178
       },
       {
@@ -189,7 +189,7 @@
         "change_pct": 0.8061,
         "volume": 49939724,
         "amount": 118317193,
-        "turnover_rate": 2.2956,
+        "turnover_rate": 2.2946,
         "amplitude": 0.9758
       },
       {
@@ -203,7 +203,7 @@
         "change_pct": 1.0178,
         "volume": 34755359,
         "amount": 68575411,
-        "turnover_rate": 2.5732,
+        "turnover_rate": 2.5713,
         "amplitude": 1.3232
       },
       {
@@ -217,7 +217,7 @@
         "change_pct": 0.9119,
         "volume": 78565300,
         "amount": 181592350,
-        "turnover_rate": 3.8355,
+        "turnover_rate": 3.8261,
         "amplitude": 1.1724
       },
       {
@@ -231,7 +231,7 @@
         "change_pct": 0.8757,
         "volume": 62765798,
         "amount": 107973946,
-        "turnover_rate": 1.4266,
+        "turnover_rate": 1.4247,
         "amplitude": 1.1092
       },
       {
@@ -245,7 +245,7 @@
         "change_pct": 0.7725,
         "volume": 120329000,
         "amount": 281540440,
-        "turnover_rate": 2.4644,
+        "turnover_rate": 2.4624,
         "amplitude": 1.073
       },
       {
@@ -259,7 +259,7 @@
         "change_pct": 0.7197,
         "volume": 70502196,
         "amount": 157383360,
-        "turnover_rate": 1.5633,
+        "turnover_rate": 1.5626,
         "amplitude": 1.1696
       },
       {
@@ -273,7 +273,7 @@
         "change_pct": 0.1515,
         "volume": 55835900,
         "amount": 110676873,
-        "turnover_rate": 0.8466,
+        "turnover_rate": 0.8454,
         "amplitude": 0.9596
       }
     ],
