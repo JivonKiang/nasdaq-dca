@@ -1,6 +1,6 @@
 {
-  "timestamp": 1785449651984,
-  "updatedAt": "2026-07-30T22:14:11Z",
+  "timestamp": 1785456671898,
+  "updatedAt": "2026-07-31T00:11:11Z",
   "dataSource": "thsdk",
   "etfs": [
     {
@@ -123,6 +123,6 @@
     "prev_close": 95.55,
     "open": 95.08,
     "high": 95.74,
-    "low": 93.29
+    "low": 93.26
   }
 }
