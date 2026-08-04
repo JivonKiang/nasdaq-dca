@@ -1,6 +1,6 @@
 {
-  "timestamp": 1785878443563,
-  "nyTime": "2026-08-04T17:20:43.000Z",
+  "timestamp": 1785880056172,
+  "nyTime": "2026-08-04T17:47:36.000Z",
   "ndx": {
     "price": 29733.16,
     "prevClose": 30407.81,
@@ -162,10 +162,10 @@
     40.686528125
   ],
   "dataSource": "yahoo-finance-server + thsdk",
-  "updatedAt": "2026-08-04T21:20:43.670Z",
+  "updatedAt": "2026-08-04T21:47:36.330Z",
   "ths": {
-    "timestamp": 1785878434380,
-    "updatedAt": "2026-08-04T21:20:34Z",
+    "timestamp": 1785880047006,
+    "updatedAt": "2026-08-04T21:47:27Z",
     "dataSource": "thsdk",
     "etfs": [
       {
@@ -235,7 +235,7 @@
         "change_pct": 2.7746,
         "volume": 119254961,
         "amount": 210844800,
-        "turnover_rate": 2.6886,
+        "turnover_rate": 2.685,
         "amplitude": 1.3295
       },
       {
@@ -249,7 +249,7 @@
         "change_pct": 2.7211,
         "volume": 143668170,
         "amount": 345715540,
-        "turnover_rate": 2.928,
+        "turnover_rate": 2.9256,
         "amplitude": 1.3605
       },
       {
@@ -263,7 +263,7 @@
         "change_pct": 2.6726,
         "volume": 111561407,
         "amount": 256069350,
-        "turnover_rate": 2.4672,
+        "turnover_rate": 2.4661,
         "amplitude": 1.069
       },
       {
@@ -277,7 +277,7 @@
         "change_pct": 2.5564,
         "volume": 57493578,
         "amount": 117142952,
-        "turnover_rate": 0.8639,
+        "turnover_rate": 0.8626,
         "amplitude": 1.0526
       }
     ],
