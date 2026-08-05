@@ -1,6 +1,6 @@
 {
-  "timestamp": 1785964840663,
-  "nyTime": "2026-08-05T17:20:40.000Z",
+  "timestamp": 1785965504437,
+  "nyTime": "2026-08-05T17:31:44.000Z",
   "ndx": {
     "price": 29487.791,
     "prevClose": 28957.6,
@@ -162,10 +162,10 @@
     40.4902328125
   ],
   "dataSource": "yahoo-finance-server + thsdk",
-  "updatedAt": "2026-08-05T21:20:40.824Z",
+  "updatedAt": "2026-08-05T21:31:44.632Z",
   "ths": {
-    "timestamp": 1785964819925,
-    "updatedAt": "2026-08-05T21:20:19Z",
+    "timestamp": 1785965490206,
+    "updatedAt": "2026-08-05T21:31:30Z",
     "dataSource": "thsdk",
     "etfs": [
       {
