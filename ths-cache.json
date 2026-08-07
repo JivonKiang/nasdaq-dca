@@ -1,6 +1,6 @@
 {
-  "timestamp": 1786029703634,
-  "updatedAt": "2026-08-06T15:21:43Z",
+  "timestamp": 1786061413800,
+  "updatedAt": "2026-08-07T00:10:13Z",
   "dataSource": "thsdk",
   "etfs": [
     {
@@ -14,7 +14,7 @@
       "change_pct": -1.31,
       "volume": 138516020,
       "amount": 374936690,
-      "turnover_rate": 2.6305,
+      "turnover_rate": 2.6287,
       "amplitude": 1.0189
     },
     {
@@ -28,7 +28,7 @@
       "change_pct": -1.3839,
       "volume": 87306745,
       "amount": 217401410,
-      "turnover_rate": 3.9986,
+      "turnover_rate": 3.9968,
       "amplitude": 0.949
     },
     {
@@ -42,7 +42,7 @@
       "change_pct": -1.3289,
       "volume": 68427968,
       "amount": 141949000,
-      "turnover_rate": 5.0364,
+      "turnover_rate": 5.0327,
       "amplitude": 0.9492
     },
     {
@@ -56,7 +56,7 @@
       "change_pct": -1.5329,
       "volume": 89395426,
       "amount": 217841020,
-      "turnover_rate": 4.2806,
+      "turnover_rate": 4.2704,
       "amplitude": 0.9278
     },
     {
@@ -70,7 +70,7 @@
       "change_pct": -1.5735,
       "volume": 152877700,
       "amount": 277028990,
-      "turnover_rate": 3.4373,
+      "turnover_rate": 3.4327,
       "amplitude": 0.9767
     },
     {
@@ -84,7 +84,7 @@
       "change_pct": -1.4765,
       "volume": 135964080,
       "amount": 335224180,
-      "turnover_rate": 2.7665,
+      "turnover_rate": 2.7642,
       "amplitude": 0.8779
     },
     {
@@ -98,7 +98,7 @@
       "change_pct": -1.3819,
       "volume": 120703500,
       "amount": 283791750,
-      "turnover_rate": 2.667,
+      "turnover_rate": 2.6659,
       "amplitude": 0.9213
     },
     {
@@ -112,14 +112,14 @@
       "change_pct": -1.1369,
       "volume": 50852600,
       "amount": 106028682,
-      "turnover_rate": 0.7618,
+      "turnover_rate": 0.7607,
       "amplitude": 1.0895
     }
   ],
   "ndx_index": {
     "code": "UNQQNDAQ",
     "name": "纳斯达克",
-    "price": 93.31,
+    "price": 94.7,
     "prev_close": 94.56,
     "open": 94.86,
     "high": 95.13,
