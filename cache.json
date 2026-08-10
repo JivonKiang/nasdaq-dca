@@ -1,6 +1,6 @@
 {
-  "timestamp": 1786362905535,
-  "nyTime": "2026-08-10T07:55:05.000Z",
+  "timestamp": 1786368426650,
+  "nyTime": "2026-08-10T09:27:06.000Z",
   "ndx": {
     "price": 29722.303,
     "prevClose": 28957.6,
@@ -108,15 +108,15 @@
     "color": "red",
     "cls": "buy-zero"
   },
-  "vix": 15.45,
+  "vix": 15.42,
   "vixRecent": [
     16.5,
     15.8100004196167,
     15.149999618530273,
     14.899999618530273,
-    15.449999809265137
+    15.420000076293945
   ],
-  "treasury10y": 4.66,
+  "treasury10y": 4.674,
   "equityBondRatio": "0.32",
   "isTradingDay": true,
   "isThursday": false,
@@ -168,10 +168,10 @@
     40.677840625
   ],
   "dataSource": "yahoo-finance-server + thsdk",
-  "updatedAt": "2026-08-10T11:55:05.649Z",
+  "updatedAt": "2026-08-10T13:27:06.919Z",
   "ths": {
-    "timestamp": 1786362868652,
-    "updatedAt": "2026-08-10T11:54:28Z",
+    "timestamp": 1786368390858,
+    "updatedAt": "2026-08-10T13:26:30Z",
     "dataSource": "thsdk",
     "etfs": [
       {
@@ -290,11 +290,11 @@
     "ndx_index": {
       "code": "UNQQNDAQ",
       "name": "纳斯达克",
-      "price": 94.59,
-      "prev_close": 94.7,
-      "open": 94.51,
-      "high": 96.045,
-      "low": 94.26
+      "price": 2147483648,
+      "prev_close": 94.59,
+      "open": 2147483648,
+      "high": 2147483648,
+      "low": 2147483648
     }
   }
 }
