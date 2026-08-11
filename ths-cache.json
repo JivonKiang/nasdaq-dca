@@ -1,6 +1,6 @@
 {
-  "timestamp": 1786469128703,
-  "updatedAt": "2026-08-11T17:25:28Z",
+  "timestamp": 1786472635151,
+  "updatedAt": "2026-08-11T18:23:55Z",
   "dataSource": "thsdk",
   "etfs": [
     {
@@ -14,7 +14,7 @@
       "change_pct": -1.4996,
       "volume": 103703791,
       "amount": 280730960,
-      "turnover_rate": 1.9638,
+      "turnover_rate": 1.9652,
       "amplitude": 1.4265
     },
     {
@@ -28,7 +28,7 @@
       "change_pct": -1.4286,
       "volume": 62721941,
       "amount": 156524550,
-      "turnover_rate": 2.8674,
+      "turnover_rate": 2.8687,
       "amplitude": 1.2302
     },
     {
@@ -42,7 +42,7 @@
       "change_pct": -1.5737,
       "volume": 55003003,
       "amount": 114089674,
-      "turnover_rate": 4.0364,
+      "turnover_rate": 4.0394,
       "amplitude": 1.3829
     },
     {
@@ -56,7 +56,7 @@
       "change_pct": -1.5004,
       "volume": 50417899,
       "amount": 123097902,
-      "turnover_rate": 2.3913,
+      "turnover_rate": 2.397,
       "amplitude": 1.2571
     },
     {
@@ -70,7 +70,7 @@
       "change_pct": -1.4738,
       "volume": 82934100,
       "amount": 150590290,
-      "turnover_rate": 1.8547,
+      "turnover_rate": 1.8572,
       "amplitude": 1.2009
     },
     {
@@ -84,7 +84,7 @@
       "change_pct": -1.4429,
       "volume": 110590773,
       "amount": 273315270,
-      "turnover_rate": 2.2429,
+      "turnover_rate": 2.2447,
       "amplitude": 1.2425
     },
     {
@@ -98,7 +98,7 @@
       "change_pct": -1.3474,
       "volume": 110009519,
       "amount": 258642740,
-      "turnover_rate": 2.4265,
+      "turnover_rate": 2.4275,
       "amplitude": 1.1789
     },
     {
@@ -112,14 +112,14 @@
       "change_pct": -1.2305,
       "volume": 47550600,
       "amount": 99504639,
-      "turnover_rate": 0.7081,
+      "turnover_rate": 0.7092,
       "amplitude": 0.8045
     }
   ],
   "ndx_index": {
     "code": "UNQQNDAQ",
     "name": "纳斯达克",
-    "price": 95.585,
+    "price": 95.495,
     "prev_close": 95.62,
     "open": 95.43,
     "high": 96,
