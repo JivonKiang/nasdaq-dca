@@ -1,6 +1,6 @@
 {
-  "timestamp": 1786559251991,
-  "updatedAt": "2026-08-12T18:27:31Z",
+  "timestamp": 1786561952227,
+  "updatedAt": "2026-08-12T19:12:32Z",
   "dataSource": "thsdk",
   "etfs": [
     {
@@ -84,7 +84,7 @@
       "change_pct": 0.5693,
       "volume": 79935776,
       "amount": 196873950,
-      "turnover_rate": 1.6199,
+      "turnover_rate": 1.6212,
       "amplitude": 1.3013
     },
     {
@@ -119,10 +119,10 @@
   "ndx_index": {
     "code": "UNQQNDAQ",
     "name": "纳斯达克",
-    "price": 95.315,
+    "price": 95.76,
     "prev_close": 95.02,
     "open": 94.255,
-    "high": 95.63,
+    "high": 95.79,
     "low": 94.05
   }
 }
