@@ -1,6 +1,6 @@
 {
-  "timestamp": 1786569161598,
-  "updatedAt": "2026-08-12T21:12:41Z",
+  "timestamp": 1786571720702,
+  "updatedAt": "2026-08-12T21:55:20Z",
   "dataSource": "thsdk",
   "etfs": [
     {
@@ -84,7 +84,7 @@
       "change_pct": 0.5693,
       "volume": 79935776,
       "amount": 196873950,
-      "turnover_rate": 1.6212,
+      "turnover_rate": 1.6199,
       "amplitude": 1.3013
     },
     {
