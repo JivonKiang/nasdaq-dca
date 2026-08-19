@@ -1,6 +1,6 @@
 {
-  "timestamp": 1787171590727,
-  "updatedAt": "2026-08-19T20:33:10Z",
+  "timestamp": 1787171811182,
+  "updatedAt": "2026-08-19T20:36:51Z",
   "dataSource": "thsdk",
   "etfs": [
     {
@@ -70,7 +70,7 @@
       "change_pct": -2.0263,
       "volume": 152300060,
       "amount": 272432990,
-      "turnover_rate": 3.3788,
+      "turnover_rate": 3.3833,
       "amplitude": 1.4239
     },
     {
@@ -84,7 +84,7 @@
       "change_pct": -1.9324,
       "volume": 148489000,
       "amount": 361460530,
-      "turnover_rate": 2.9969,
+      "turnover_rate": 2.9993,
       "amplitude": 1.409
     },
     {
@@ -98,7 +98,7 @@
       "change_pct": -1.7722,
       "volume": 98271427,
       "amount": 228582130,
-      "turnover_rate": 2.1618,
+      "turnover_rate": 2.1628,
       "amplitude": 1.0127
     },
     {
@@ -112,7 +112,7 @@
       "change_pct": -1.3823,
       "volume": 46991624,
       "amount": 96837231,
-      "turnover_rate": 0.6945,
+      "turnover_rate": 0.6946,
       "amplitude": 0.715
     }
   ],
