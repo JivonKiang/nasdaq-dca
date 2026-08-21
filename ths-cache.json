@@ -1,6 +1,6 @@
 {
-  "timestamp": 1787329659297,
-  "updatedAt": "2026-08-21T16:27:39Z",
+  "timestamp": 1787330551128,
+  "updatedAt": "2026-08-21T16:42:31Z",
   "dataSource": "thsdk",
   "etfs": [
     {
@@ -14,7 +14,7 @@
       "change_pct": -0.7821,
       "volume": 136196410,
       "amount": 362103020,
-      "turnover_rate": 2.5664,
+      "turnover_rate": 2.5646,
       "amplitude": 0.8939
     },
     {
@@ -28,7 +28,7 @@
       "change_pct": -0.4845,
       "volume": 93589100,
       "amount": 229608210,
-      "turnover_rate": 4.2648,
+      "turnover_rate": 4.2629,
       "amplitude": 1.4937
     },
     {
@@ -42,7 +42,7 @@
       "change_pct": -0.6289,
       "volume": 36135688,
       "amount": 73862625,
-      "turnover_rate": 2.6383,
+      "turnover_rate": 2.6364,
       "amplitude": 0.9676
     },
     {
@@ -56,7 +56,7 @@
       "change_pct": -0.8642,
       "volume": 69826831,
       "amount": 167485120,
-      "turnover_rate": 3.2669,
+      "turnover_rate": 3.2654,
       "amplitude": 0.9877
     },
     {
@@ -70,7 +70,7 @@
       "change_pct": -0.6101,
       "volume": 84926794,
       "amount": 151527900,
-      "turnover_rate": 1.8816,
+      "turnover_rate": 1.8791,
       "amplitude": 1.1093
     },
     {
@@ -84,7 +84,7 @@
       "change_pct": -0.6525,
       "volume": 124495700,
       "amount": 302261490,
-      "turnover_rate": 2.5106,
+      "turnover_rate": 2.5086,
       "amplitude": 1.1419
     },
     {
@@ -98,7 +98,7 @@
       "change_pct": -0.7663,
       "volume": 74075000,
       "amount": 172008080,
-      "turnover_rate": 1.6288,
+      "turnover_rate": 1.6281,
       "amplitude": 0.9791
     },
     {
@@ -112,14 +112,14 @@
       "change_pct": -0.7652,
       "volume": 42953800,
       "amount": 89126795,
-      "turnover_rate": 0.6348,
+      "turnover_rate": 0.6347,
       "amplitude": 0.9087
     }
   ],
   "ndx_index": {
     "code": "UNQQNDAQ",
     "name": "纳斯达克",
-    "price": 98.32,
+    "price": 98.34,
     "prev_close": 97.55,
     "open": 98.44,
     "high": 98.74,
