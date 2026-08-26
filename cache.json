@@ -1,6 +1,6 @@
 {
-  "timestamp": 1787714018065,
-  "nyTime": "2026-08-25T23:13:38.000Z",
+  "timestamp": 1787719746247,
+  "nyTime": "2026-08-26T00:49:06.000Z",
   "ndx": {
     "price": 29209.229,
     "prevClose": 29440.32,
@@ -8,7 +8,7 @@
     "weeklyChange": -0.955316234344053,
     "high60d": 30276.349609375,
     "drawdown": 3.524601291578986,
-    "ma20": 29267.6775390625,
+    "ma20": 29267.67763671875,
     "ma20Direction": "down",
     "recentCloses": [
       29118.240234375,
@@ -52,7 +52,7 @@
       29213.16015625,
       29308.859375,
       29023.1796875,
-      29209.228515625
+      29209.23046875
     ],
     "timestamps": [
       1782480600,
@@ -118,8 +118,8 @@
   "equityBondRatio": "0.32",
   "isTradingDay": true,
   "isThursday": false,
-  "daysToThursday": 2,
-  "dayOfWeek": 2,
+  "daysToThursday": 1,
+  "dayOfWeek": 3,
   "historicalPE": [
     40.1945921875,
     40.7198,
@@ -162,55 +162,55 @@
     40.270528125,
     40.3470875,
     40.11854375,
-    40.2673828125
+    40.267384375
   ],
   "dataSource": "yahoo-finance-server + thsdk",
-  "updatedAt": "2026-08-26T03:13:38.239Z",
+  "updatedAt": "2026-08-26T04:49:06.503Z",
   "ths": {
-    "timestamp": 1787714007977,
-    "updatedAt": "2026-08-26T03:13:27Z",
+    "timestamp": 1787719729857,
+    "updatedAt": "2026-08-26T04:48:49Z",
     "dataSource": "thsdk",
     "etfs": [
       {
         "code": "USHJ513300",
         "name": "纳斯达克ETF华夏",
-        "price": 2.683,
+        "price": 2.685,
         "open": null,
         "high": 2.691,
         "low": 2.651,
         "prev_close": 2.671,
-        "change_pct": 0.4493,
-        "volume": 80617500,
-        "amount": 215696030,
-        "turnover_rate": 1.5159,
+        "change_pct": 0.5241,
+        "volume": 89562377,
+        "amount": 239713610,
+        "turnover_rate": 1.6841,
         "amplitude": 1.4976
       },
       {
         "code": "USHJ513110",
         "name": "纳指ETF华泰柏瑞",
-        "price": 2.465,
+        "price": 2.466,
         "open": null,
         "high": 2.472,
         "low": 2.446,
         "prev_close": 2.465,
-        "change_pct": 0,
-        "volume": 78744300,
-        "amount": 193550930,
-        "turnover_rate": 3.5835,
+        "change_pct": 0.0406,
+        "volume": 81402600,
+        "amount": 200108920,
+        "turnover_rate": 3.7044,
         "amplitude": 1.0548
       },
       {
         "code": "USHJ513870",
         "name": "纳指ETF富国",
-        "price": 2.052,
+        "price": 2.053,
         "open": null,
         "high": 2.059,
         "low": 2.036,
         "prev_close": 2.05,
-        "change_pct": 0.0976,
-        "volume": 21593700,
-        "amount": 44243418,
-        "turnover_rate": 1.5731,
+        "change_pct": 0.1463,
+        "volume": 23154000,
+        "amount": 47447653,
+        "turnover_rate": 1.6868,
         "amplitude": 1.122
       },
       {
@@ -222,23 +222,23 @@
         "low": 2.39,
         "prev_close": 2.41,
         "change_pct": 0.1245,
-        "volume": 26704500,
-        "amount": 64243799,
-        "turnover_rate": 1.2477,
+        "volume": 28940354,
+        "amount": 69639918,
+        "turnover_rate": 1.3521,
         "amplitude": 1.2033
       },
       {
         "code": "USZJ159513",
         "name": "纳斯达克100ETF大成",
-        "price": 1.79,
+        "price": 1.791,
         "open": null,
         "high": 1.794,
         "low": 1.776,
         "prev_close": 1.789,
-        "change_pct": 0.0559,
-        "volume": 87091836,
-        "amount": 155540240,
-        "turnover_rate": 1.9219,
+        "change_pct": 0.1118,
+        "volume": 93077636,
+        "amount": 166261530,
+        "turnover_rate": 2.054,
         "amplitude": 1.0061
       },
       {
@@ -250,9 +250,9 @@
         "low": 2.415,
         "prev_close": 2.437,
         "change_pct": 0.1231,
-        "volume": 64568096,
-        "amount": 157213500,
-        "turnover_rate": 1.299,
+        "volume": 69420996,
+        "amount": 169061180,
+        "turnover_rate": 1.3966,
         "amplitude": 1.3541
       },
       {
@@ -264,9 +264,9 @@
         "low": 2.312,
         "prev_close": 2.33,
         "change_pct": 0.2575,
-        "volume": 41541689,
-        "amount": 96697359,
-        "turnover_rate": 0.9123,
+        "volume": 44056789,
+        "amount": 102574681,
+        "turnover_rate": 0.9675,
         "amplitude": 1.2017
       },
       {
@@ -278,9 +278,9 @@
         "low": 2.077,
         "prev_close": 2.076,
         "change_pct": 0.3372,
-        "volume": 11604900,
-        "amount": 24228873,
-        "turnover_rate": 0.1714,
+        "volume": 14681400,
+        "amount": 30643115,
+        "turnover_rate": 0.2169,
         "amplitude": 0.8189
       }
     ],
