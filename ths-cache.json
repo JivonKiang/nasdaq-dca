@@ -1,6 +1,6 @@
 {
-  "timestamp": 1788182946524,
-  "updatedAt": "2026-08-31T13:29:06Z",
+  "timestamp": 1788204109045,
+  "updatedAt": "2026-08-31T19:21:49Z",
   "dataSource": "thsdk",
   "etfs": [
     {
@@ -119,10 +119,10 @@
   "ndx_index": {
     "code": "UNQQNDAQ",
     "name": "纳斯达克",
-    "price": 2147483648,
+    "price": 98.24,
     "prev_close": 99.31,
-    "open": 2147483648,
-    "high": 2147483648,
-    "low": 2147483648
+    "open": 99,
+    "high": 99.02,
+    "low": 96.95
   }
 }
